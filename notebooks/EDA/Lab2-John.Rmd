@@ -1,0 +1,252 @@
+---
+title: "EDA layoffs"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+source("exploratory_functions_steven.R")
+
+filename <- "layoffs_data.csv"
+filedir <- "/Users/jbang//Documents/github/lab_2_203_sec3_fall24_team5/src/data/raw/"
+```
+
+```{r include=FALSE}
+df <- eda_process(filename, filedir)
+```
+
+```{r}
+# Limit observation to only be 2023
+df.dated <- df %>% 
+  filter(Date >= as.Date("2023-01-01") & Date <= as.Date("2023-12-31"))
+
+# See only the united states
+df.country_us <- df.dated %>% 
+  filter(Country == "United States")
+
+# Desired features
+df.target <- df.country_us %>% 
+  select(Laid_Off_Count, Funds_Raised, Stage, Industry)
+
+# Remove all nulls
+df.final <- df.target %>% 
+  drop_na(Laid_Off_Count, Funds_Raised, Stage, Industry)
+  
+df.final
+```
+
+```{r}
+print("Dated")
+print(accounting_counter(df, df.dated))
+print("USA")
+print(accounting_counter(df.dated, df.country_us))
+print("FILTERED")
+print(accounting_counter(df.country_us, df.target))
+print("No nulls")
+print(accounting_counter(df.target, df.final))
+```
+
+```{r}
+# spot check
+table(df.final$Stage)
+print("-----")
+table(df.final$Industry)
+print("-----")
+table(df.final$Laid_Off_Count)
+print("-----")
+table(df.final$Funds_Raised)
+# Looks like we can drop the unknowns
+```
+
+
+
+
+
+```{r}
+
+library(splitstackshape)
+
+
+df.final <- df.final %>%
+  mutate(
+    Log_Funds_Raised = log(Funds_Raised + 1),
+    Log_Laid_Off_Count = log(Laid_Off_Count + 1)
+  )
+
+# seed for reproducibility
+set.seed(1)
+
+
+index <- sample(seq_len(nrow(df.final)), size = 0.3 * nrow(df.final))
+
+# Create the exploratory sample (30%)
+exploratory_sample <- df.final[index, ]
+
+# Create the confirmatory sample (remaining 70%)
+confirmatory_sample <- df.final[-index, ]
+
+# Summaries to confirm the split
+summary(exploratory_sample)
+summary(confirmatory_sample)
+
+
+
+```
+
+
+
+```{r}
+
+# This is the explanatory split
+exploratory_model <- lm(Log_Laid_Off_Count ~ Log_Funds_Raised, data = exploratory_sample)
+
+# This is the confirmatory split
+confirmatory_model <- lm(Log_Laid_Off_Count ~ Log_Funds_Raised, data = confirmatory_sample)
+
+# Display the summaries for both models
+cat("Exploratory Model Summary:\n")
+summary(exploratory_model)
+
+cat("\nConfirmatory Model Summary:\n")
+summary(confirmatory_model)
+```
+
+If we add Industry to our model, we still see Funding as significant. However, we add explanatory power to our model. 
+
+
+```{r}
+
+# This is the explanatory split
+exploratory_model_industry <- lm(Log_Laid_Off_Count ~ Log_Funds_Raised + factor(Industry), data = exploratory_sample)
+
+# This is the confirmatory split
+confirmatory_model_industry <- lm(Log_Laid_Off_Count ~ Log_Funds_Raised + factor(Industry), data = confirmatory_sample)
+
+# Display the summaries for both models
+cat("Exploratory Model Summary:\n")
+summary(exploratory_model_industry)
+
+cat("\nConfirmatory Model Summary:\n")
+summary(confirmatory_model_industry)
+```
+
+
+To visualize these results, we used a heatmap. 
+
+
+```{r}
+
+# Load necessary libraries
+library(ggplot2)
+library(reshape2)
+
+# Extract coefficients from the linear model
+coefficients <- coef(confirmatory_model)
+
+# Convert coefficients to a data frame
+coeff_df <- data.frame(
+  Term = names(coefficients),
+  Coefficient = coefficients
+)
+
+# Filter for Industry-related coefficients
+industry_coeff <- coeff_df[grepl("Industry", coeff_df$Term), ]
+
+# Add a base level row for reference (optional)
+base_level <- data.frame(Term = "(Intercept)", Coefficient = coefficients["(Intercept)"])
+industry_coeff <- rbind(base_level, industry_coeff)
+
+# Create heatmap using ggplot2
+ggplot(industry_coeff, aes(x = 1, y = reorder(Term, Coefficient), fill = Coefficient)) +
+  geom_tile(color = "white") +  # Add border for clarity
+  geom_text(aes(label = round(Coefficient, 2)), color = "black", size = 4) +  # Add coefficient values as text
+  scale_fill_gradient2(
+    low = "blue", 
+    mid = "white", 
+    high = "red", 
+    midpoint = 0, 
+    name = "Coefficient Value"  # Legend title
+  ) +
+  labs(
+    title = "Heatmap of Regression Coefficients for Industry",
+    subtitle = "Positive coefficients increase log layoffs, negative decrease",
+    x = "",
+    y = "Industry Levels"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.title.x = element_blank()
+  )
+
+
+```
+
+
+
+
+
+```{r}
+
+# Load the stargazer package
+library(stargazer)
+
+# Create a copy of the model coefficients for scaling
+scaled_coefficients <- coef(confirmatory_model) * 100
+
+# Create a stargazer table for the regression summary
+stargazer(
+  confirmatory_model,
+  type = "text",              # output
+  
+  coef = list(scaled_coefficients),  # Provide scaled coefficients
+  se = list(summary(confirmatory_model)$coefficients[, 2] * 100), # Scale standard errors too
+ 
+  title = "Linear Regression Summary",
+  align = TRUE,               
+  dep.var.labels = "Log(Laid Off Count)",  # dependent variable
+  covariate.labels = c(       # independent variables
+    "Log(Funds Raised)"
+  ),
+  omit.stat = c("f", "ser"),  
+  no.space = TRUE             
+)
+
+
+```
+
+
+```{r}
+
+# Load the stargazer package
+library(stargazer)
+
+# Create a copy of the model coefficients for scaling
+scaled_coefficients <- coef(confirmatory_model_industry) * 100
+
+# Create a stargazer table for the regression summary
+stargazer(
+  confirmatory_model_industry,
+  type = "text",              # output
+  
+  coef = list(scaled_coefficients),  # Provide scaled coefficients
+  se = list(summary(confirmatory_model_industry)$coefficients[, 2] * 100), # Scale standard errors too
+ 
+  title = "Linear Regression Summary",
+  align = TRUE,               
+  dep.var.labels = "Log(Laid Off Count)",  # dependent variable
+  covariate.labels = c(       # independent variables
+    "Log(Funds Raised)"
+  ),
+  omit.stat = c("f", "ser"),  
+  no.space = TRUE             
+)
+
+
+```
+
+
+
+
+

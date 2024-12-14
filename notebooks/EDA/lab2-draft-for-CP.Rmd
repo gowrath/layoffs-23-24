@@ -1,0 +1,663 @@
+---
+title: "Lab 2: Analyzing the Impact of Company Funding on 2023 Layoffs"
+author: Jinney Hong, John Bang, Steven Au
+output: pdf_document
+date: "12-13-2024"
+---
+
+```{r include=FALSE}
+library(tidyverse)
+# Do dataset import - done
+# Import R function from src - almost done
+# Other setup - done?
+source("../../src/data/data_wrangle.R")
+
+# Setup objects
+df_raw <- read.csv("../../data/external/layoffs_data.csv")
+wrangle_output <- wrangle_dataset(df_raw, accounting_counter)
+df.final <- wrangle_output[[1]]
+acct_iteration <- wrangle_output[[2]]
+
+
+# Do the execution script function here, not important right as it's just from the rmd saved to R as discussed w/ group
+
+# Model setup objects
+# 30% 
+training_df <- read_csv("../../data/processed/exploration.csv")
+
+# 70%
+evaluation_df <- read_csv("../../data/processed/confirmation.csv")
+```
+
+
+## Abstract
+(rough1)In 2023, economic instability following COVID-19 led to a series of mass layoffs across various industries, affecting millions of workers in the United States. This study examines the availability of funding for companies, their growth stage, and industry-specific obstacles, investigating how these factors collectively shape corporate responses to financial uncertainties. Using regression analysis on a dataset of U.S.-based companies, the research explores the hypothesis that companies with lower funding have the same number of layoffs than companies with higher funding in 2023. 
+
+\newpage
+## Introduction
+The year 2023 was marked by economic instability, leading many companies, especially in the U.S., to resort to workforce reductions in response to financial and market uncertainties. These layoffs, while significantly affecting employees, also serve as key indicators of corporate health, reflecting how companies at various stages of growth across different industries adapt to the changing market. 
+
+
+Central to these challenges is funding, a critical factor influencing a company’s ability to sustain its workforce. Organizations with limited financial reserves often face difficult decisions, including workforce reductions, while those with more funding may be better positioned to navigate economic challenges but may still resort to layoffs to optimize profitability.
+
+## Description of Data Source
+
+## Data Wrangling
+| Cause | Observations Remaining | Dropped Observations |
+|---|---|---|
+| Start | `r acct_iteration[[1]][[2]]` | `r acct_iteration[[1]][[3]]` |
+| Filter Date range 01-01-2023 to 12-31-2023 | `r acct_iteration[[2]][[2]]` | `r acct_iteration[[2]][[3]]` |
+| Limit Country to United States |`r acct_iteration[[3]][[2]]` | `r acct_iteration[[3]][[3]]` |
+| Drop all Nulls | `r acct_iteration[[4]][[2]]` | `r acct_iteration[[4]][[3]]` |
+| Group by Companies | `r acct_iteration[[5]][[2]]` | `r acct_iteration[[5]][[3]]` |
+| Remove duplicated Companies | `r acct_iteration[[6]][[2]]` | `r acct_iteration[[6]][[3]]` |
+| Remove unknown entries and apply data munging changes |`r acct_iteration[[7]][[2]]` | `r acct_iteration[[7]][[3]]` |
+We have wrangled the data based on each of the causes and the observations remaining as shown by the table above. The original dataset contained 3642 observations and the final result dataset is `r acct_iteration[[7]][[2]]`. For the breakdown between training and confirmation datasets, we applied a randomly sampled 30% partition per industry to ensure a fair distribution of the observations. This results in `r nrow(training_df)` observations for the training and `r nrow(evaluation_df)` observations for the confirmation dataset.
+
+## Operationalization
+
+
+
+**Null Hypothesis:** 
+
+
+Companies with lower funding have the same number of layoffs than companies with higher funding in 2023. 
+
+
+## A Visualization
+
+```{r}
+
+
+```
+
+```{r}
+
+```
+
+
+## Model Specification
+
+Our null hypothesis was that companies with lower funding are more likely to have higher numbers of layoffs than companies with higher funding in 2023. 
+
+To explore our research question ‘How does a company’s funding, industry, and stage impact the number of employees laid off in 2023?’, we created several linear regression models. Our first model focuses on the relationship between funding and layoffs where Laid_Off_Count is the dependent variable and Funds_Raised is the independent variable. Both variables resulted in a positive skew, so we applied log transformations to normalize the distributions. The following model tests if there is a significant relationship between funding levels and the number of layoffs:
+
+Log(Layoffs) = β0 + β1 ⋅Log(Funds Raised) + ϵ
+
+Next, we take into account the industry, as an additional categorical predictor. This second model aims to see if company’s industry influences layoffs:
+
+Log(Layoffs) = β0 + β1 ⋅Log(Funds Raised) + β2 ⋅Industry + ϵ
+
+However, the R-squared coefficient was relatively low for this model (as seen in the model results) and the p-value was not significant. Its explanatory power was limited, so another factor (stage) was theorized to explain more of the variation. Finally, we ran another model to analyze the influence of a company’s funding stage.
+
+Log(Layoffs) = β0 + β1 ⋅Log(Funds Raised) + β2 ⋅Industry + Stage + ϵ
+
+With this final model in place, we were ready to produce the model results.
+
+
+
+##Model Results and Interpretation
+
+
+First trained model (raw data with no transformations): In the first trained model with unlogged variables, we have a p-value of `0.85` and an R-squared value of `0.0002869`. We do not find a significant relationship between funding level and layoffs. However, the R-squared value indicates our model captures very little of the variation, meaning the independent variable (layoffs) is not well explained by the funding level. 
+
+
+```{r, echo=FALSE}
+
+
+# fit the explanatory model with only Funds Raised as a predictor
+explanatory_model_unlogged <- lm(Laid_Off_Count ~ Funds_Raised, 
+                        data = training_df)
+
+
+# predict on the evaluation dataset
+evaluation_df <- evaluation_df %>%
+  mutate(
+    Predicted_Laid_Off = predict(explanatory_model_unlogged, newdata = evaluation_df)
+  )
+
+
+# display the model summary
+cat("Explanatory Model Summary:\n")
+summary(explanatory_model_unlogged)
+
+```
+
+
+Second trained model: We then analyzed the structure of the data, and saw from a histogram of the funds raised and the laid off count by company that both distributions are skewed positively. We logged both the independent and dependent variable (funding). With a p-value of `0.02284` and an R-squared value of `0.04349`, we now find a significant relationship between funding level and layoffs. However, the R-squared value is low, indicating our model captures only `4.3%` of the variation in laid off count. To analyze our results for the null hypothesis, we see that a `1%` increase in funds raised is associated with an approximate 0.173% increase in `Laid_Off_Count` when accounting for industry. 
+
+
+```{r, echo=FALSE}
+
+# Plot 1: Histogram of Funds Raised
+ggplot(df.final, aes(x = Funds_Raised)) +
+  geom_histogram(binwidth = 500, fill = "skyblue", color = "black") +
+  theme_minimal() +
+  labs(title = "Distribution of Funds Raised", x = "Funds Raised (in million $)", y = "Count") +
+  xlim(0, 10000) +
+  ylim(0, 200)
+
+
+# Plot 2: Histogram of Laid Off Count
+hist(df.final$Laid_Off_Count, 
+     breaks = 30,  # Adjust number of bins as needed
+     col = "lightblue", 
+     border = "black", 
+     main = "Histogram of Laid Off Count", 
+     xlab = "Laid Off Count", 
+     ylab = "Frequency")
+
+# Add a grid for better readability
+grid(nx = NULL, ny = NULL, col = "gray", lty = "dotted")
+
+```
+
+
+## Log Transformation of the two variables, funding and laid off count.
+
+```{r, echo=FALSE}
+
+
+# Log Both the Funds Raised and the Laid Off Count
+training_df_logged <- training_df %>%
+  mutate(
+    Log_Funds_Raised = log(Funds_Raised + 1),
+    Log_Laid_Off_Count = log(Laid_Off_Count + 1)
+  )
+
+# Log Both the Funds Raised and the Laid Off Count
+evaluation_df_logged <- evaluation_df %>%
+  mutate(
+    Log_Funds_Raised = log(Funds_Raised + 1),
+    Log_Laid_Off_Count = log(Laid_Off_Count + 1)
+  )
+
+
+```
+
+
+## Test on the confirmatory model
+
+
+```{r, echo=FALSE}
+
+
+# fit the explanatory model with only Funds Raised as a predictor
+explanatory_model <- lm(Log_Laid_Off_Count ~ Log_Funds_Raised, 
+                        data = training_df_logged)
+
+
+# predict on the evaluation dataset
+evaluation_df_logged <- evaluation_df_logged %>%
+  mutate(
+    Predicted_Laid_Off = predict(explanatory_model, newdata = evaluation_df_logged)
+  )
+
+
+# display the model summary
+cat("Explanatory Model Summary:\n")
+summary(explanatory_model)
+
+```
+
+Second trained model: We then analyzed the structure of the data, and saw from a histogram of the funds raised and the laid off count by company that both distributions are skewed positively. We logged both the independent and dependent variable (funding). With a p-value of `0.043` and an R-squared value of `0.035`, we now find a significant relationship between funding level and layoffs. However, the R-squared value is low, indicating our model captures only `4.3%` of the variation in laid off count. To analyze our results for the null hypothesis, we see that a `1%` increase in funds raised is associated with an approximate 0.173% increase in `Laid_Off_Count` when accounting for industry. 
+
+```{r, echo=FALSE}
+
+library(stargazer)
+
+stargazer(
+  explanatory_model,
+  type = "text",              # Output format
+  title = "Linear Regression Summary",
+  align = TRUE
+        
+)
+
+```
+
+
+Third trained model with industry as a factor: We then added Industry as a factor in our model, hoping to explain more of the variation. This addition significantly improved the model’s fit of our second model, with the R-squared increasing to `0.296` and adjusted R-squared increasing to `0.097`, indicating that the model now explains approximately 6.9% of the layoff variation. The second confirmation model’s p-value for Log(Funds_Raised) is 0.08582. The coefficient for Log(Funds_Raised) is 0.195, meaning a 1% increase in funding is associated with a 0.195% increase in layoffs. There are some limitations of this model, with the residuals deviating from zero, suggesting a better fit is needed to match the data.
+
+```{r, echo=FALSE}
+
+
+# Adds Industry in the training df
+training_df_logged <- training_df %>%
+  mutate(
+    Log_Funds_Raised = log(Funds_Raised + 1),
+    Log_Laid_Off_Count = log(Laid_Off_Count + 1),
+    Industry = factor(Industry)
+  )
+
+# Recode Manufacturing to Other in the evaluation dataset and adds Industry as a factor
+evaluation_df_logged <- evaluation_df %>%
+  mutate(
+    Log_Funds_Raised = log(Funds_Raised + 1),
+    Log_Laid_Off_Count = log(Laid_Off_Count + 1),
+    Industry = factor(Industry)
+)
+
+```
+
+
+```{r}
+
+# fit the explanatory model using factor(Industry) as a predictor
+explanatory_model_industry <- lm(Log_Laid_Off_Count ~ Log_Funds_Raised + factor(Industry), 
+                        data = training_df_logged)
+
+# predict on the evaluation dataset
+evaluation_df_logged <- evaluation_df_logged %>%
+  mutate(
+    Predicted_Laid_Off = predict(explanatory_model_industry, newdata = evaluation_df_logged),
+    Residuals = Log_Laid_Off_Count - Predicted_Laid_Off
+  )
+
+# display the model summary
+cat("Explanatory Model Summary:\n")
+summary(explanatory_model_industry)
+
+
+```
+
+Viewed in a stargazer format, the confirmatory model has these results.
+
+```{r, echo=FALSE}
+
+library(stargazer)
+
+stargazer(
+  explanatory_model, explanatory_model_industry,
+  type = "text",              # Output format
+  title = "Linear Regression Summary",
+  align = TRUE,
+  column.labels = c("explanatory_model", "explanatory_model_industry") 
+        
+)
+
+```
+
+
+```{r}
+
+
+
+# Residual plot for explanatory_model_industry
+ggplot(evaluation_df_logged, aes(x = Predicted_Laid_Off, y = Residuals)) +
+  geom_point() +
+  geom_smooth(
+    method = "lm",
+    formula = y ~ poly(x, 2),
+    se = FALSE
+  ) 
+  labs(
+    x = "Fitted Values (Predicted Log Laid Off Count)",
+    y = "Residuals",
+    title = "Residuals vs. Fitted Values for Explanatory Model Industry"
+  ) +
+  theme_minimal()
+
+
+```
+
+
+
+
+
+
+
+
+Fourth trained model with stage as a factor: We then added stage as a factor in our model, hoping to explain more of the variation. This addition significantly improved the model’s fit of our third model, with the R-squared increasing to `0.377` and adjusted R-squared increasing to `0.261`, indicating that the model now explains approximately 37.7% of the layoff variation. The fourth confirmation model’s p-value for Log(Funds_Raised) is 3.709e-08, confirming that funding remains a statistically significant predictor of layoffs when industry and stage are taken into account. The coefficient for Log(Funds_Raised) is 0.051, meaning a 1% increase in funding is associated with a 0.051% increase in layoffs. The residuals vs. fitted plot is beginning to level out, meaning that this model is a better fit for our confirmatory set.
+
+
+```{r, echo=FALSE}
+
+
+# Adds Stage in the training df
+training_df_logged_stage <- training_df %>%
+  mutate(
+    Log_Funds_Raised = log(Funds_Raised + 1),
+    Log_Laid_Off_Count = log(Laid_Off_Count + 1),
+    Industry = factor(Industry),
+    Stage = factor(Stage)
+    
+  )
+
+# Recode Manufacturing to Other in the evaluation dataset and adds Stage as a factor
+evaluation_df_logged_stage <- evaluation_df %>%
+  mutate(
+    Log_Funds_Raised = log(Funds_Raised + 1),
+    Log_Laid_Off_Count = log(Laid_Off_Count + 1),
+    Industry = factor(Industry),
+    Stage = factor(Stage)
+)
+
+```
+
+
+
+```{r, echo=FALSE}
+
+# fit the explanatory model using factor(Industry) and Stage as a predictor
+explanatory_model_industry_stage <- lm(Log_Laid_Off_Count ~ Log_Funds_Raised + factor(Industry) + factor(Stage), 
+                        data = training_df_logged_stage)
+
+# Align Industry and Stage levels in evaluation dataset with the training dataset
+evaluation_df_logged_stage <- evaluation_df_logged_stage %>%
+  mutate(
+    Industry = factor(Industry, levels = levels(training_df_logged_stage$Industry)),
+    Stage = factor(Stage, levels = levels(training_df_logged_stage$Stage))
+  )
+
+# # Remove rows with missing predictor values
+# evaluation_df_logged_stage <- evaluation_df_logged_stage %>%
+#   filter(
+#     !is.na(Log_Funds_Raised) & 
+#     !is.na(Log_Laid_Off_Count) & 
+#     !is.na(Industry) & 
+#     !is.na(Stage)
+#   )
+
+
+# predict on the evaluation dataset
+
+evaluation_df_logged_stage <- evaluation_df_logged_stage %>%
+  mutate(
+    Predicted_Laid_Off_Stage = predict(explanatory_model_industry_stage, newdata = evaluation_df_logged_stage),
+    Residuals_Stage = Log_Laid_Off_Count - Predicted_Laid_Off_Stage
+
+  )
+
+
+# display the model summary
+cat("Explanatory Model Summary:\n")
+summary(explanatory_model_industry_stage)
+
+
+```
+
+Stargazer with all three models:
+
+```{r, echo=FALSE}
+
+library(stargazer)
+
+stargazer(explanatory_model, explanatory_model_industry, explanatory_model_industry_stage,
+  type = "text",              # Output format
+  title = "Linear Regression Summary",
+  align = TRUE,
+  column.labels = c("explanatory_model", "explanatory_model_industry", "explanatory_model_industry_stage") 
+        
+)
+
+```
+
+
+
+
+
+```{r}
+
+# Residual plot for explanatory_model_industry
+# plot(explanatory_model, which = 1)
+# plot(explanatory_model_industry, which = 1)
+# plot(explanatory_model_industry_stage, which = 1)
+
+
+industry_poly <- 8
+
+industry_stage_poly <- 10
+
+
+plotted_model_industry <- ggplot(
+  evaluation_df_logged,
+  aes(x = Predicted_Laid_Off, y = Residuals)
+) +
+  geom_point() +
+  stat_smooth() +
+  labs(
+    title = "Residuals vs Predicted for Explanatory Model Industry",
+    subtitle = paste("Industry^", as.character(industry_poly), sep = ""),
+    x = "Predicted Values",
+    y = "Residual Values"
+  ) +
+  theme_minimal()
+
+
+
+plotted_model_industry_stage <- ggplot(
+  evaluation_df_logged_stage,
+  aes(x = Predicted_Laid_Off_Stage, y = Residuals_Stage)
+) +
+  geom_point() +
+  stat_smooth() +
+  labs(
+    title = "Residuals vs Predicted for Explanatory Model Industry and Stage",
+    subtitle = paste("Stage^", as.character(industry_stage_poly), sep = ""),
+    x = "Predicted Values",
+    y = "Residual Values"
+  ) +
+  theme_minimal()
+
+# Render plot for industry
+print(plotted_model_industry)
+
+# Render plot for industry and stage
+print(plotted_model_industry_stage)
+
+# 
+# # Residual plot for explanatory_model_industry
+# ggplot(evaluation_df_logged, aes(x = Predicted_Laid_Off, y = Residuals)) +
+#   geom_point() +
+#   stat_smooth(
+#     method = "lm",
+#     formula = y ~ poly(x, 3),
+#     se = FALSE
+#   )
+#   labs(
+#     x = "Fitted Values (Predicted Log Laid Off Count)",
+#     y = "Residuals",
+#     title = "Residuals vs. Fitted Values for Explanatory Model Industry"
+#   ) +
+#   theme_minimal()
+# 
+#  
+# # Residual plot for explanatory_model_industry
+# ggplot(evaluation_df_logged_stage, aes(x = Predicted_Laid_Off_Stage, y = Residuals_Stage)) +
+#   geom_point() +
+#   stat_smooth(
+#     method = "lm",
+#     formula = y ~ poly(x, 4),
+#     se = FALSE
+#   )
+#   labs(
+#     x = "Fitted Values (Predicted Log Laid Off Count)",
+#     y = "Residuals",
+#     title = "Residuals vs. Fitted Values for Explanatory Model Industry and Stage"
+#   ) +
+#   theme_minimal()
+
+
+
+```
+
+
+## Model Assumptions
+
+
+
+## Model Results
+
+
+
+We find reason to reject the null hypothesis that the funding level does not increase the number of layoffs for companies in 2023. 
+
+
+```{r, echo=FALSE}
+
+n_tests <- 3 # Number of models being tested (explanatory_model, explanatory_model_Industry)
+
+# Set the initial significance level (e.g., 0.05)
+alpha <- 0.05
+
+# Adjusted significance level using Bonferroni correction
+adjusted_alpha <- alpha / n_tests
+
+# Check p-values for explanatory_model and explanatory_model_Industry
+# Example: Assuming you have summary objects for each model
+summary_explanatory <- summary(explanatory_model)
+summary_industry <- summary(explanatory_model_industry)
+summary_industry_stage <- summary(explanatory_model_industry_stage)
+
+# Extract p-values (example for model coefficients)
+p_values_explanatory <- summary_explanatory$coefficients[, 4] # Extracting p-values from summary
+p_values_industry <- summary_industry$coefficients[, 4] # Extracting p-values from summary
+p_values_industry_stage <- summary_industry_stage$coefficients[, 4] # Extracting p-values from summary
+
+# Apply Bonferroni correction
+bonferroni_corrected_p_explanatory <- p.adjust(p_values_explanatory, method = "bonferroni")
+bonferroni_corrected_p_industry <- p.adjust(p_values_industry, method = "bonferroni")
+bonferroni_corrected_p_industry_stage <- p.adjust(p_values_industry_stage, method = "bonferroni")
+
+# Output results
+cat("Bonferroni corrected p-values for explanatory_model:\n")
+print(bonferroni_corrected_p_explanatory)
+
+cat("Bonferroni corrected p-values for explanatory_model_industry:\n")
+print(bonferroni_corrected_p_industry)
+
+cat("Bonferroni corrected p-values for explanatory_model_industry_stage:\n")
+print(bonferroni_corrected_p_industry_stage)
+
+# Check significance against adjusted alpha
+cat("\nSignificant coefficients for explanatory_model (Bonferroni corrected):\n")
+print(sprintf("%.10f", bonferroni_corrected_p_explanatory < adjusted_alpha))
+
+cat("\nSignificant coefficients for explanatory_model_industry (Bonferroni corrected):\n")
+print(sprintf("%.10f", bonferroni_corrected_p_industry < adjusted_alpha))
+
+cat("\nSignificant coefficients for explanatory_model_industry_stage (Bonferroni corrected):\n")
+print(sprintf("%.10f", bonferroni_corrected_p_industry_stage < adjusted_alpha))
+
+```
+
+
+
+```{r}
+# Check the baseline (reference category) for Industry
+baseline_industry <- levels(evaluation_df_logged$Industry)[1] # Assuming Industry is a factor
+
+# Print the baseline
+cat("Baseline (reference category) for Industry:", baseline_industry, "\n")
+
+
+```
+
+
+
+```{r}
+# cat("Coefficients in explanatory_model_industry:\n")
+# print(coef(summary(explanatory_model_industry)))
+
+# Compute Wald test for Log_Funds_Raised
+wald_stat <- summary(explanatory_model_industry)$coefficients["Log_Funds_Raised", 1] /
+             summary(explanatory_model_industry)$coefficients["Log_Funds_Raised", 2]
+
+# Compute Wald test p-value
+wald_p_value <- 2 * (1 - pnorm(abs(wald_stat)))
+
+# Print Wald statistic and p-value
+cat("Wald statistic for Log_Funds_Raised:", wald_stat, "\n")
+cat("Wald test p-value for Log_Funds_Raised:", wald_p_value, "\n")
+```
+
+
+
+```{r}
+# Compute Wald test for Log_Funds_Raised
+wald_stat <- summary(explanatory_model_industry_stage)$coefficients["Log_Funds_Raised", 1] /
+             summary(explanatory_model_industry_stage)$coefficients["Log_Funds_Raised", 2]
+
+# Compute Wald test p-value
+wald_p_value <- 2 * (1 - pnorm(abs(wald_stat)))
+
+# Print Wald statistic and p-value
+cat("Wald statistic for Log_Funds_Raised:", wald_stat, "\n")
+cat("Wald test p-value for Log_Funds_Raised:", wald_p_value, "\n")
+```
+
+
+
+## Overall Effect
+
+
+
+
+
+\newpage
+# REMINDER TO ADD A BIBLIOGRAPHY/REFERENCES HERE
+
+## Appendix
+
+We also analyzed heteroscedasticity, which shows non-constant variance for the model. The clustering of values for the Scale-Location plot indicates heteroscedasticity, meaning there might be an issue with the model or the data. The residuals vs. fitted graph also shows an issue of clustering. The model may be too simple or the data might be skewed.
+
+
+```{r, echo=FALSE}
+
+plot(explanatory_model_unlogged, which=3)
+
+plot(explanatory_model_unlogged, which = 1)
+
+
+```
+
+
+We noted that the Scale-Location and the Residual vs. Fitted plot both show a more clear indicator that our model is homoscedastic. The residuals are straighter than before, meaning the model is beginning to capture more of the variation in the data. In addition, the residuals are now being randomly scattered around zero. 
+
+
+
+```{r, echo=FALSE}
+
+plot(explanatory_model, which=3)
+plot(explanatory_model, which = 1)
+
+```
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+
+summary(evaluation_df_logged_stage$Predicted_Laid_Off_Stage)
+summary(evaluation_df_logged_stage$Residuals_Stage)
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r}
+dim(evaluation_df_logged_stage)
+```
+
+
+
+

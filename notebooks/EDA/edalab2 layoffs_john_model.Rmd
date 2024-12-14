@@ -1,0 +1,327 @@
+---
+title: "EDA layoffs"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+source("exploratory_functions_steven.R")
+
+filename <- "layoffs_data.csv"
+filedir <- "/Users/steau/github/lab_2_203_sec3_fall24_team5/src/data/raw/"
+```
+
+```{r include=FALSE}
+df <- eda_process(filename, filedir)
+```
+
+```{r}
+# Limit observation to only be 2023
+df.dated <- df %>% 
+  filter(Date >= as.Date("2023-01-01") & Date <= as.Date("2023-12-31"))
+
+# See only the united states
+df.country_us <- df.dated %>% 
+  filter(Country == "United States")
+
+# Desired features
+df.target <- df.country_us %>% 
+  select(Laid_Off_Count, Funds_Raised, Stage, Industry)
+
+df.test <- df.target[!complete.cases(df.target),] 
+## All null values do not follow a strict pattern and are determinable as random.
+
+# Remove all nulls
+df.no_unknowns <- df.target %>% 
+  drop_na(Laid_Off_Count, Funds_Raised, Stage, Industry)
+
+# Remove all unknowns
+df.final <- df.no_unknowns %>% 
+  filter(Stage != "Unknown" & Industry != "Unknown")
+
+df.final
+```
+
+```{r}
+print("Dated")
+print(accounting_counter(df, df.dated))
+print("USA")
+print(accounting_counter(df.dated, df.country_us))
+print("FILTERED")
+print(accounting_counter(df.country_us, df.target))
+print("No nulls")
+print(accounting_counter(df.target, df.no_unknowns))
+print("No unknowns")
+print(accounting_counter(df.no_unknowns, df.final))
+```
+
+```{r}
+# spot check
+table(df.final$Stage)
+print("-----")
+table(df.final$Industry)
+print("-----")
+table(df.final$Laid_Off_Count)
+print("-----")
+table(df.final$Funds_Raised)
+# Looks like we can drop the unknowns
+```
+```{r}
+write_csv(df.final, "../../data/interim/wrangled_data.csv")
+```
+
+
+
+
+```{r}
+# RUN ONLY ONCE and never again. No need to run anymore - will be moved to report still commented out - Do not uncomment
+# generate_indices_for_test_selection_30(417, "../../data/interim")
+```
+
+```{r}
+# Model divisor
+training_csv_index <- "../../data/interim/random_training_index.csv"
+processed_directory <- "../../data/processed"
+
+interim_selection <- read_csv(training_csv_index)
+report_dataframes <- split_data_frame(df.final, interim_selection$random_selection_sample, processed_directory)
+# 30% divided out
+training_df <- report_dataframes[[1]]
+
+# 70# 
+evaluation_df <- report_dataframes[[2]]
+```
+
+
+
+
+```{r}
+
+
+# recode manufacturing to Other in the training dataset
+training_df_logged <- training_df %>%
+  mutate(
+    Log_Funds_Raised = log(Funds_Raised + 1),
+    Log_Laid_Off_Count = log(Laid_Off_Count + 1),
+    Industry = ensure_other_level(
+      factor(ifelse(Industry == "Manufacturing", "Other", Industry))
+    )
+  )
+
+# Recode Manufacturing to Other in the evaluation dataset
+evaluation_df_logged <- evaluation_df %>%
+  mutate(
+    Log_Funds_Raised = log(Funds_Raised + 1),
+    Log_Laid_Off_Count = log(Laid_Off_Count + 1),
+    Log_Funds_Raised = log(Funds_Raised + 1),
+    Industry = ensure_other_level(
+      factor(ifelse(Industry == "Manufacturing", "Other", Industry))
+    )
+  )
+
+
+```
+
+
+
+
+
+
+
+
+
+
+```{r}
+
+
+# fit the explanatory model with only Funds Raised as a predictor
+explanatory_model <- lm(Log_Laid_Off_Count ~ Log_Funds_Raised, 
+                        data = training_df_logged)
+
+
+# predict on the evaluation dataset
+evaluation_df_logged <- evaluation_df_logged %>%
+  mutate(
+    Predicted_Laid_Off = predict(explanatory_model, newdata = evaluation_df_logged)
+  )
+
+
+# display the model summary
+cat("Explanatory Model Summary:\n")
+summary(explanatory_model)
+
+```
+
+
+```{r}
+
+library(stargazer)
+
+stargazer(
+  explanatory_model,
+  type = "text",              # Output format
+  title = "Linear Regression Summary",
+  align = TRUE
+        
+)
+
+```
+
+
+
+
+
+
+
+
+```{r}
+
+
+# recode manufacturing to Other in the training dataset
+training_df_logged <- training_df %>%
+  mutate(
+    Log_Funds_Raised = log(Funds_Raised + 1),
+    Log_Laid_Off_Count = log(Laid_Off_Count + 1),
+    Industry = ensure_other_level(
+      factor(ifelse(Industry == "Manufacturing", "Other", Industry))
+    )
+  )
+
+# Recode Manufacturing to Other in the evaluation dataset
+evaluation_df_logged <- evaluation_df %>%
+  mutate(
+    Log_Funds_Raised = log(Funds_Raised + 1),
+    Log_Laid_Off_Count = log(Laid_Off_Count + 1),
+    Log_Funds_Raised = log(Funds_Raised + 1),
+    Industry = ensure_other_level(
+      factor(ifelse(Industry == "Manufacturing", "Other", Industry))
+    )
+  )
+
+
+```
+
+
+
+
+
+
+
+
+```{r}
+
+# fit the explanatory model using factor(Industry) as a predictor
+explanatory_model_industry <- lm(Log_Laid_Off_Count ~ Log_Funds_Raised + factor(Industry), 
+                        data = training_df_logged)
+
+# predict on the evaluation dataset
+evaluation_df_logged <- evaluation_df_logged %>%
+  mutate(
+    Predicted_Laid_Off = predict(exploratory_model, newdata = evaluation_df_logged),
+    Residuals = Log_Laid_Off_Count - Predicted_Laid_Off
+  )
+
+# display the model summary
+cat("Explanatory Model Summary:\n")
+summary(explanatory_model_industry)
+
+
+```
+
+
+
+
+
+
+```{r}
+
+# residual plot
+ggplot(evaluation_df_logged, aes(x = Predicted_Laid_Off, y = Residuals)) +
+  geom_point(alpha = 0.7) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red") +
+  labs(
+    title = "Residual Plot",
+    x = "Predicted Laid Off (Log Scale)",
+    y = "Residuals (Actual - Predicted)"
+  ) +
+  theme_minimal()
+
+
+```
+
+
+
+```{r}
+
+# Load necessary libraries
+library(ggplot2)
+library(reshape2)
+
+# get coefficients from the linear model
+coefficients <- coef(explanatory_model_industry)
+
+# put coefficients in a dataframe
+coeff_df <- data.frame(
+  Term = names(coefficients),
+  Coefficient = coefficients
+)
+
+# filter for Industry-related coefficients
+industry_coeff <- coeff_df[grepl("Industry", coeff_df$Term), ]
+
+# add a base level row for reference (optional)
+base_level <- data.frame(Term = "(Intercept)", Coefficient = coefficients["(Intercept)"])
+industry_coeff <- rbind(base_level, industry_coeff)
+
+# Create heatmap using ggplot2
+ggplot(industry_coeff, aes(x = 1, y = reorder(Term, Coefficient), fill = Coefficient)) +
+  geom_tile(color = "white") +  # Add border for clarity
+  geom_text(aes(label = round(Coefficient, 2)), color = "black", size = 4) +  # Add coefficient values as text
+  scale_fill_gradient2(
+    low = "blue", 
+    mid = "white", 
+    high = "red", 
+    midpoint = 0, 
+    name = "Coefficient Value"  # Legend title
+  ) +
+  labs(
+    title = "Heatmap of Regression Coefficients for Industry",
+    subtitle = "Positive coefficients increase log layoffs, negative decrease",
+    x = "",
+    y = "Industry Levels"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.title.x = element_blank()
+  )
+
+
+```
+
+```{r}
+
+evaluation_df_logged <- evaluation_df_logged %>%
+  mutate(
+    Predicted_Laid_Off_Unlogged = exp(Predicted_Laid_Off) - 1
+  )
+
+
+```
+
+
+```{r}
+
+stargazer(
+  explanatory_model_industry,
+  type = "text",              # Output format
+  title = "Linear Regression Summary",
+  align = TRUE
+        
+)
+
+```
+
+
+

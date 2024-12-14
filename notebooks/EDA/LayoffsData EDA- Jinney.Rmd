@@ -1,0 +1,159 @@
+---
+title: "LayoffsData Practice EDA"
+output:
+  pdf_document: default
+  html_document: default
+date: "2024-11-14"
+---
+```{r}
+filename <- "layoffs_data.csv"
+filedir <- "/Users/jbang/Downloads/"
+full_file <- paste(filedir,filename, sep = "")
+layoffs <- read.csv(full_file)
+```
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(gridExtra)
+df <- layoffs
+```
+
+## Preview of Data
+```{r}
+head(df)
+str(df)
+summary(df)
+spec(df)
+```
+
+Checking missing values
+```{r}
+sum(is.na(df)) #Total number of missing  
+colSums(is.na(df)) #Missing values by column
+df <- na.omit(df) #drop na's
+```
+
+Duplicated Rows?
+```{r}
+duplicated_df <- duplicated(df)
+sum(duplicated_df)
+df[duplicated(df), ]
+```
+
+##Drop unnecessary columns
+
+```{r}
+colnames(df)
+
+df <- df %>% 
+  select(-Location_HQ, -List_of_Employees_Laid_Off, -Source, -Date_Added)
+
+df
+```
+
+## Visualizations - Layoffs by Industry
+```{r}
+industry_layoffs <- df %>%    
+  group_by(Industry) %>%
+  summarize(Total_Layoffs = sum(Laid_Off_Count)) %>%
+  arrange(desc(Total_Layoffs)) %>% 
+  head(10) #can adjust by deleting or changing number i want to display
+print(industry_layoffs)
+
+```
+
+```{r}
+graph1 <- ggplot(industry_layoffs, aes(x = reorder(Industry, Total_Layoffs), y = Total_Layoffs, fill = Industry)) +
+  geom_bar(stat = "identity") + 
+  coord_flip() +
+  labs(
+    title = "Industries with the Most Layoffs",
+    x = "Industry",
+    y = "Total Layoffs"
+  ) +
+  theme_minimal() + 
+  theme(
+    plot.title = element_text(hjust = 0.5), # Center the title
+    legend.position = "none" # Hide  legend
+  )
+
+```
+
+Layoff Percentage by industry
+```{r}
+layoff_percentage <- df %>% 
+  group_by(Industry) %>% 
+  summarize(LayoffPerc_Avg = mean(Percentage)) %>% 
+  arrange(desc(LayoffPerc_Avg)) %>% 
+  head(10) 
+ print(layoff_percentage)
+
+```
+
+```{r}
+graph2 <- ggplot(layoff_percentage, aes(x = reorder(Industry, LayoffPerc_Avg), y = LayoffPerc_Avg, fill=Industry)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(title = "Avg Layoff Percentage by Industry",
+       x = "Industry", y = "Avg Layoff (%)") +
+  theme_minimal() + 
+  theme(
+    plot.title = element_text(hjust = 0.5), # Center  title
+    legend.position = "none" # Hide legend
+  )
+```
+
+```{r}
+grid.arrange(graph1, graph2, nrow = 2)
+```
+
+-   We can see by the first graph, Transportation, Retail, and "Other" industries lead in terms of total layoffs, each with over 40,000 These sectors may be more vulnerable to economic downturns or shifts in consumer behavior.Consumer, Finance, Food, and Real Estate industries also show significant layoffs but are slightly lower than the top industries.
+-   From bottom graph, Aerospace has the highest average layoff percentage (over 40%), indicating that while it may not have the highest total number of layoffs, when layoffs occur in this industry, they tend to affect a larger proportion of employees. Construction and Travel industries also show high average layoff percentages (around 0.3), suggesting that these sectors may experience more workforce reductions during downturns.
+
+## Visualizations - Layoffs by Funds Raised
+```{r}
+ggplot(df, aes(x = Funds_Raised, y = Laid_Off_Count, color = Industry)) +
+  geom_point(size = 1) + 
+  labs(
+    title = "Scatter Plot of Laid Off Count vs. \nFunds Raised by Industry",
+    x = "Funds Raised (in millions)",
+    y = "Lay Off Count"
+  ) +
+  theme_minimal() 
+  theme(plot.title = element_text(hjust = 0.5)) # Center the title
+```
+
+-   We see clustering in lay off count where there are less funds raised
+-   There are outliers with high layoff counts despite lower fundraising levels. This could indicate companies that grew too quickly or faced unexpected challenges after scaling.
+
+## Visualization - Layoff and Stage
+
+```{r}
+stage_layoffs <- df %>%    
+  group_by(Stage) %>%
+  summarize(Total_Layoffs = sum(Laid_Off_Count)) %>%
+  arrange(desc(Total_Layoffs)) %>% 
+print(stage_layoffs)
+```
+
+```{r}
+ggplot(stage_layoffs, aes(x = reorder(Stage, Total_Layoffs), y = Total_Layoffs)) +
+  coord_flip() +
+  geom_bar(stat = "identity", fill = "blue") + 
+  labs(
+    title = "Stage of Companies",
+    x = "Stage",
+    y = "Total Layoffs"
+  ) +
+  theme_minimal() + 
+  theme(
+    plot.title = element_text(hjust = 0.5),  # Center the title
+    legend.position = "none"  # Hide the legend
+  )
+```
+
+Potential research questions: 
+- Which industries are most vulnerable to layoffs? How does this relate to their average layoff percentages?
+- Is there a correlation between the amount of funds raised and the number of layoffs across industries?

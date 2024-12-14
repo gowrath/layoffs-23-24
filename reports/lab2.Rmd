@@ -1,0 +1,567 @@
+---
+title: "Lab 2: Analyzing the Impact of Company Funding on 2023 Layoffs"
+author: Jinney Hong, John Bang, Steven Au
+output: pdf_document
+date: "12-13-2024"
+geometry: margin=0.5in
+---
+---
+references:
+  - id: crunchbase
+    title: "The Crunchbase Tech Layoffs Tracker"
+    issued:
+      year: 2024
+      month: 12
+      day: 6
+    container-title: "LinkedIn And AppLovin Rejoin Tech Layoffs Tracker In A Somewhat Subdued Year-Ending Quarter"
+    url: "https://news.crunchbase.com/startups/tech-layoffs/"
+---
+
+```{r}
+ls()
+```
+
+```{r}
+library(tidyverse)
+library(moments)
+library(gridExtra)
+library(stargazer)
+
+source("../src/data/data_wrangle.R")
+source("../src/data/create_csv_files.R")
+
+# Setup objects
+df_raw <- read.csv("../data/external/layoffs_data.csv")
+wrangle_output <- wrangle_dataset(df_raw, accounting_counter)
+df.final <- wrangle_output[[1]]
+acct_iteration <- wrangle_output[[2]]
+
+# Create data directory files
+save_csv_data_files(df.final, "../data")
+
+# Model setup objects
+# 30% 
+training_df <- read_csv("../data/processed/exploration.csv")
+# 
+# # 70%
+evaluation_df <- read_csv("../data/processed/confirmation.csv")
+```
+
+
+
+
+```{r}
+# print("Summary of raw data:")
+# print(summary(df_raw))
+
+# print("Rows with NA in Percentage (raw data):")
+# print(df_raw %>% filter(is.na(Percentage)))
+
+
+cat("Rows in raw_df:", nrow(df_raw), "\n")
+# cat("Rows after filtering by date:", nrow(df.dated), "\n")
+cat("Rows after filtering by country:", nrow(df.country_us), "\n")
+cat("Rows after drop_na (excluding Percentage):", nrow(df.no_unknowns), "\n")
+
+
+cat("Rows in df.no_unknowns:", nrow(df.no_unknowns), "\n")
+
+cat("Rows after filtering unknowns (df.known_companies):", nrow(df.known_companies))
+
+cat("Rows in final dataset (df.final):", nrow(df.final), "\n")
+
+cat("Rows in df.known_companies (before mutate/select):", nrow(df.known_companies), "\n")
+
+
+# test_directory <- "../data/test"
+# print(file.access(test_directory, 2)) 
+# 
+# print(paste("Test directory path:", test_directory))
+# print(paste("Expected CSV file path:", "wrangled_data.csv"))
+# 
+# print(file.access(test_directory, 2))
+
+
+# # Check and debug directory permissions
+# if (file.access(test_directory, 2) == -1) {
+#   print("Write permissions are not available for the test directory.")
+#   print("Attempting to create the directory or use an alternative path.")
+#   
+#   # Create directory if it doesn't exist
+#   if (!dir.exists(test_directory)) {
+#     tryCatch({
+#       dir.create(test_directory, recursive = TRUE)
+#       print("Test directory created.")
+#     }, error = function(e) {
+#       print(paste("Error creating test directory:", e$message))
+#     })
+#   } else {
+#     print("Test directory exists but write permissions are missing.")
+#   }
+# } else {
+#   print("Write permissions are available.")
+# }
+# 
+# # Test writing a file
+# tryCatch({
+#   write_csv(tibble(a = 1:5, b = letters[1:5]), file.path(test_directory, "test_file.csv"))
+#   print("Test file successfully written.")
+# }, error = function(e) {
+#   print(paste("Error writing test file:", e$message))
+# })
+# 
+# print(normalizePath(test_directory))
+```
+
+```{r}
+
+# Add 'Company_Size' to training_df
+training_df <- training_df %>%
+  mutate(Company_Size = Laid_Off_Count / Percentage)
+
+# Add 'Company_Size' to evaluation_df
+evaluation_df <- evaluation_df %>%
+  mutate(Company_Size = Laid_Off_Count / Percentage)
+
+# Check the results
+head(training_df)
+head(evaluation_df)
+```
+
+### Abstract
+In 2023, economic instability following COVID-19 led to mass layoffs across tech companies in various industries, significantly impacting the U.S. workforce. This study investigates the role of funding availability, company growth stage, and industry-specific factors in shaping corporate responses to financial uncertainty. Using regression analysis on a dataset of U.S.-based tech companies, this research tests the hypothesis that companies with lower funding have the same number of layoffs as companies with higher funding in 2023. Results indicate that while funding is statistically significant, company growth stage and industry-specific dynamics account for a larger proportion of variation in layoffs when included as additional variables. This highlights that layoffs are driven by a combination of financial pressures and company-specific factors. Ultimately, this report will help businesses identify the key factors driving workforce reductions and develop strategies that align more effectively with their financial and industry contexts during economic downturns.
+
+\newpage
+### Introduction
+In 2023, more than 191,000 workers in U.S.-based tech companies alone faced layoffs as organizations responded to financial and market uncertainties. @crunchbase These layoffs not only affected the lives of employees but also reflected corporate financial health and resilience in navigating market challenges. Companies with limited financial reserves may resort to workforce reductions, but even those with sufficient funding may implement layoffs to meet market expectations or to make operations more efficient. 
+
+This study examines the role of funding, growth stage, and industry as factors that could influence layoffs. Specifically, we will address the research question: How does a company's funding, stage, and industry within the United States impact the number of employees laid off in 2023? We hypothesize that companies with lower funding will experience the same number of layoffs as those with higher funding. This reflects the idea that layoffs may not only depend on financial health but also on strategic decisions influenced by market conditions. The findings aim to describe the effect of financial and company-specific dynamics on layoffs. 
+
+### Data Source
+Our dataset is from Kaggle’s 2024 layoffs data, which is sourced from a public database called layoffs.fyi created to track layoffs during the pandemic. The dataset includes companies from various countries, ranging from the United States to India, spanning from March 10, 2020 to June 6, 2024. Our analysis focuses on companies in the United States and layoffs during 2023 (January 1st to December 31st). This data is collected from publicly available sources, including news reports, input from former employees, and company press releases with each entry representing a unique layoff event. 
+
+The dataset contains the following columns: Company, Location_HQ, Industry, Laid_Off_Count, Date, Source, Funds_Raised, Stage, Date_Added, Country, Percentage, List_Of_Employees_Laid_Off. Our analysis focuses on the Laid_Off_Count as the response variable, which represents the number of employees laid off. The predictor variables include Funds_Raised, Stage, and Industry. 
+
+### Operationalization
+| | Response Variable | Predictor Variables | Other Variables for filtering and relevance |
+|---|---|---|---|
+| **Feature used** | Laid_Off_Count (metric) | Funds_Raised (metric), Stage, Industry | Date, Country, Company |
+| **Definition** | The total number of employees laid off by a company. | **Funds_Raised**: Total funding secured by a company, in millions of dollars. \newline\ **Stage**: Company growth phase, from early-stage (ex. seed) to later-stage (ex. post-IPO). \newline\ **Industry**: Sector the company operates in such as technology, healthcare, or finance. | **Date**: The date on which the layoffs were reported. \newline\ **Country**: The country that the company is headquartered. \newline\ **Company**: The name of the organization conducting the layoffs. |
+| **Rationale** | This variable directly captures the absolute magnitude of workforce reductions as a quantifiable measure of layoffs that avoids potential bias from company size variations inherent in the variable, *Percentage*.  | **Funds_Raised**: Indicates a company’s financial health and ability to navigate economic challenges, influencing layoff decisions; missing values were excluded for data quality. \newline\ **Stage**: Reflects business strategies and economic vulnerability, making it relevant to layoffs. \newline\ **Industry**: Captures industry-specific trends and pressures that impact layoff likelihood.   | **Date**: Constrains the dataset to 2023 to avoid temporal bias and focus on that year's layoffs. \newline\ **Country**: Excludes non-U.S. observations to align with the study's focus on U.S. market dynamics. \newline\  **Company**: Ensures unique observations by removing duplicate layoff records for distinct occurrences. |
+
+### Data Wrangling
+| Cause | Observations Remaining | Dropped Observations |
+|---|---|---|
+| Start | `r acct_iteration[[1]][[2]]` | `r acct_iteration[[1]][[3]]` |
+| Filter Date range 01-01-2023 to 12-31-2023 | `r acct_iteration[[2]][[2]]` | `r acct_iteration[[2]][[3]]` |
+| Limit Country to United States |`r acct_iteration[[3]][[2]]` | `r acct_iteration[[3]][[3]]` |
+| Drop all Nulls | `r acct_iteration[[4]][[2]]` | `r acct_iteration[[4]][[3]]` |
+| Group by companies to remove temporal bias | `r acct_iteration[[5]][[2]]` | `r acct_iteration[[5]][[3]]` |
+| Remove duplicated Companies that changed stage or industry | `r acct_iteration[[6]][[2]]` | `r acct_iteration[[6]][[3]]` |
+| Remove unknown entries and apply data munging changes |`r acct_iteration[[7]][[2]]` | `r acct_iteration[[7]][[3]]` |
+We have wrangled the dataset per the causes down from `r nrow(df_raw)` to `r acct_iteration[[7]][[2]]` observations. We then randomly sampled 30% of the results by industry to ensure a reasonable distribution `r nrow(training_df)` for the training and the remainder `r nrow(evaluation_df)` for the confirmation datasets. However, stage was not used as part of the distribution split since there were fewer categories that would cause an imbalance.
+
+
+### Null Hypothesis
+
+
+Companies with lower funding have the same number of layoffs than companies with higher funding in 2023. 
+
+
+### Model Specification
+```{r, include=FALSE}
+## Model 1
+
+# fit the explanatory model with only Funds Raised as a predictor
+explanatory_model_unlogged <- lm(Laid_Off_Count ~ Funds_Raised, 
+                        data = training_df)
+
+
+# predict on the evaluation dataset
+evaluation_df <- evaluation_df %>%
+  mutate(
+    Predicted_Laid_Off = predict(explanatory_model_unlogged, newdata = evaluation_df)
+  )
+
+p_value_unlogged<- round(summary(explanatory_model_unlogged)$coefficients["Funds_Raised", "Pr(>|t|)"],3)
+r_squared_unlogged<- round(summary(explanatory_model_unlogged)$r.squared, 5)
+
+cat(p_value_unlogged)
+cat(r_squared_unlogged)
+
+
+## Model 2
+
+# Log Both the Funds Raised and the Laid Off Count
+training_df_logged <- training_df %>%
+  mutate(
+    Log_Funds_Raised = log(Funds_Raised + 1),
+    Log_Laid_Off_Count = log(Laid_Off_Count + 1)
+  )
+
+# Log Both the Funds Raised and the Laid Off Count
+evaluation_df_logged <- evaluation_df %>%
+  mutate(
+    Log_Funds_Raised = log(Funds_Raised + 1),
+    Log_Laid_Off_Count = log(Laid_Off_Count + 1)
+  )
+
+
+# fit the explanatory model with only Funds Raised as a predictor
+explanatory_model <- lm(Log_Laid_Off_Count ~ Log_Funds_Raised, 
+                        data = training_df_logged)
+
+
+# predict on the evaluation dataset
+evaluation_df_logged <- evaluation_df_logged %>%
+  mutate(
+    Predicted_Laid_Off = predict(explanatory_model, newdata = evaluation_df_logged)
+  )
+
+
+p_value_m2<- round(summary(explanatory_model)$coefficients["Log_Funds_Raised", "Pr(>|t|)"],3)
+r_squared_m2<- round(summary(explanatory_model)$r.squared, 5)
+
+cat(p_value_m2)
+cat(r_squared_m2)
+
+
+## Model 3
+
+# Adds Industry in the training df
+training_df_logged3 <- training_df %>%
+  mutate(
+    Log_Funds_Raised = log(Funds_Raised + 1),
+    Log_Laid_Off_Count = log(Laid_Off_Count + 1),
+    Industry = factor(Industry)
+    
+  )
+
+# Recode Manufacturing to Other in the evaluation dataset and adds Industry as a factor
+evaluation_df_logged3 <- evaluation_df %>%
+  mutate(
+    Log_Funds_Raised = log(Funds_Raised + 1),
+    Log_Laid_Off_Count = log(Laid_Off_Count + 1),
+    Industry = factor(Industry)
+  
+)
+
+# fit the explanatory model using factor(Industry) as a predictor
+explanatory_model_industry <- lm(Log_Laid_Off_Count ~ Log_Funds_Raised + factor(Industry), 
+                        data = training_df_logged)
+
+# predict on the evaluation dataset
+evaluation_df_logged <- evaluation_df_logged %>%
+  mutate(
+    Predicted_Laid_Off = predict(explanatory_model_industry, newdata = evaluation_df_logged),
+    Residuals = Log_Laid_Off_Count - Predicted_Laid_Off
+  )
+
+
+p_value_industry3<- round(summary(explanatory_model_industry)$coefficients["Log_Funds_Raised", "Pr(>|t|)"],3)
+r_squared_industry3<- round(summary(explanatory_model_industry)$r.squared, 5)
+co_industry3 <- round(summary(explanatory_model)$coefficients[2, "Estimate"],3)
+
+
+cat(p_value_industry3)
+cat(r_squared_industry3)
+cat(co_industry3)
+
+
+## Model 4
+
+# Adds Stage in the training df
+training_df_logged_stage <- training_df %>%
+  mutate(
+    Log_Funds_Raised = log(Funds_Raised + 1),
+    Log_Laid_Off_Count = log(Laid_Off_Count + 1),
+    Industry = factor(Industry),
+    Stage = factor(Stage)
+    
+  )
+
+# Recode Manufacturing to Other in the evaluation dataset and adds Stage as a factor
+evaluation_df_logged_stage <- evaluation_df %>%
+  mutate(
+    Log_Funds_Raised = log(Funds_Raised + 1),
+    Log_Laid_Off_Count = log(Laid_Off_Count + 1),
+    Industry = factor(Industry),
+    Stage = factor(Stage)
+)
+
+# fit the explanatory model using factor(Industry) and Stage as a predictor
+explanatory_model_industry_stage <- lm(Log_Laid_Off_Count ~ Log_Funds_Raised + factor(Industry) + factor(Stage) 
+                                       # + Company_Size
+                                       , 
+                        data = training_df_logged_stage)
+
+# Align Industry and Stage levels in evaluation dataset with the training dataset
+evaluation_df_logged_stage <- evaluation_df_logged_stage %>%
+  mutate(
+    Industry = factor(Industry, levels = levels(training_df_logged_stage$Industry)),
+    Stage = factor(Stage, levels = levels(training_df_logged_stage$Stage))
+  )
+
+# predict on the evaluation dataset
+evaluation_df_logged_stage <- evaluation_df_logged_stage %>%
+  mutate(
+    Predicted_Laid_Off_Stage = predict(explanatory_model_industry_stage, newdata = evaluation_df_logged_stage),
+    Residuals_Stage = Log_Laid_Off_Count - Predicted_Laid_Off_Stage
+
+  )
+
+
+p_value_industry_stage<- round(summary(explanatory_model_industry_stage)$coefficients["Log_Funds_Raised", "Pr(>|t|)"],3)
+r_squared_industry_stage<- round(summary(explanatory_model_industry_stage)$r.squared, 5)
+co_industry_stage <- round(summary(explanatory_model)$coefficients[2, "Estimate"],3)
+
+cat(p_value_industry_stage)
+cat(r_squared_industry_stage)
+cat(co_industry_stage)
+```
+
+To explore our research question, we created several linear regression models. Our first model focuses on the relationship between the dependent variable, funding(Funds_Raised), and the independent variable, layoffs (Laid_Off_Count). Both variables resulted in a positive skew, so we applied log transformations to normalize the distributions. The following model tests if there is a significant relationship between funding levels and the number of logged layoffs:
+$$
+Log( \text{Layoffs} ) = \beta 0 + \beta 1 * Log( \text{Funds\_Raised} ) + \epsilon
+$$
+Next, we take into account the industry, as an additional categorical variable to see if a company’s industry influences layoffs:
+$$Log(\text{Layoffs})= \beta 0 + \beta 1 * Log(\text{Funds\_Raised}) + \beta 2 * Industry + \epsilon$$
+To improve the explanatory power, another factor (stage) was added to further explain the variation and to analyze the effect of the stage on logged layoffs.
+$$Log(\text{Layoffs}) = \beta 0 + \beta 1 * Log(\text{Funds\_Raised}) + \beta 2 * Industry + Stage + \epsilon$$
+
+### Model Assumptions
+We evaluated the large sample assumptions for the existence of the best linear predictor (BLP) and independent and identically distributed (IID) data for our exploratory model. 
+
+For the BLP assumption, because we applied a log transformation for Laid_Off_Count and Funds_Raised, this resulted in less heavy tails (Appendix 1 - skew and kurtosis subtitled) and a normalized distribution (Figure 1). We also calculated the variance inflation factor (VIF) to confirm that the predictor and response variables have no perfect collinearity if the value is below 5. The computed VIF value is `r round(1/(1-r_squared_industry_stage), 3)`. As a result, we verified that a unique BLP exists for our model. 
+
+For the IID assumption, we evaluated that the dataset's sampling method is gathered independently as mentioned in the Data Source section. Although we understand that not all companies per industry have similar business operations and structures leading to a possible bias in our results, we can confirm that our data does not have particular industry and stage clustering for our analysis per our scatterplots. (Appendix 2)
+
+### Visualization
+```{r fig.height=3, echo=FALSE}
+laid_off_log_hist_plt <- training_df %>% 
+  ggplot() +
+  aes(x=log(Laid_Off_Count)) +
+  geom_histogram(bins = 10) +
+  labs(
+    title = "Histogram of Laid Off Count",
+    x = "Log of Laid Off Count",
+    y = "Frequency"
+  )
+
+funds_raised_log_hist_plt <- training_df %>% 
+  ggplot() +
+  aes(x=log(Funds_Raised)) +
+  geom_histogram(bins = 10) +
+  labs(
+    title = "Histogram of Funds Raised",
+    x = "Log of Funds Raised",
+    y = "Frequency"
+  )
+grid.arrange(laid_off_log_hist_plt, funds_raised_log_hist_plt, ncol=2)
+```
+
+```{r fig.height=3, echo=FALSE}
+company_size_hist_plt <- training_df %>% 
+  ggplot() +
+  aes(x=log(Laid_Off_Count)) +
+  geom_histogram(bins = 10) +
+  labs(
+    title = "Histogram of Company Size",
+    x = "Company Size",
+    y = "Frequency"
+  )
+
+grid.arrange(company_size_hist_plt, ncol=1)
+
+```
+
+
+
+Figure 1: A log transformation applied to both the Funds_Raised and Laid_Off_Count metric variables results in normalized distribution histogram plots for our model fit assumptions.
+
+### Model Results
+
+The regression results provide insights into the relationship between funding and layoffs, with additional factors included to improve our model. 
+
+First trained model (raw data with no transformations): In the first trained model with unlogged variables, we have a p-value of `r p_value_unlogged` and an R-squared value of `r r_squared_unlogged`, which captures very little of the variation, meaning the independent variable (layoffs) is not well explained by the funding level. 
+
+Second trained model: We then logged the data because both distributions are heavily skewed positively to show a normalized distribution. (Figure 1). The p-value is `r p_value_m2` and the R-squared explains only `r r_squared_m2*100`% of the variation in logged laid off count. 
+
+Since our dependent variable (funds raised) and our independent variable (laid off count) were both skewed, we performed a log transformation on the laid off count and the funds raised.
+
+
+Third trained model with industry as a factor: We then added Industry as a factor in our model, hoping to explain more of the variation. This addition significantly improved the model’s fit, with the p-value for Log(Funds_Raised) as `r p_value_industry3` and R-squared increasing to `r r_squared_industry3`. The coefficient for Log(Funds_Raised) is `r co_industry3`, meaning a 1% unit increase in funding is associated with a `r co_industry3`% increase in layoffs, but this is not statistically significant. See appendix 3 for the residual plot.
+
+Fourth trained model with stage as a factor: We then added stage as a factor in our model, hoping to explain more of the variation. The R-squared increased to `r p_value_industry_stage` and the p-value for Log(Funds_Raised) was `r r_squared_industry_stage`, which is closer to the significance level when industry and stage are taken into account. As for practical significance, the coefficient for Log(Funds_Raised) is `r co_industry_stage`, meaning a 1% increase in funding is associated with a `r co_industry_stage`% increase in layoffs, but this is not statistically significant. See appendix 3 for the residual plot.
+
+
+A full linear regression summary of the second, third, and fourth models is below. 
+
+The unlogged summary is available in appendix 4. 
+
+```{r, echo=FALSE}
+
+stargazer(explanatory_model, explanatory_model_industry, explanatory_model_industry_stage,
+  type = "text",              # Output format
+  title = "Linear Regression Summary",
+  align = TRUE,
+  column.labels = c("explanatory_model", "explanatory_model_industry", "explanatory_model_industry_stage")
+  # ,
+  # keep = c("Data", "Finance", "Healthcare")
+)
+
+```
+
+### Practical Significance
+
+In conclusion, our study fails to reject the null hypothesis. Although our findings indicate a slight increase in layoffs associated with company funding, the relationship was determined to not be statistically significant given the dataset used. However, adding industry and growth stage into the model improved the model’s R-squared value, suggesting that these variables play a meaningful role, alongside funding, in influencing layoff numbers. 
+
+For future model improvements and research, we could include additional variables, such as company size or geographic location, which could yield additional insights while building upon existing studies exploring drivers of workforce reductions. We hope to provide organizations with data-driven insights for better workforce management during economic challenges.
+
+\newpage
+#### Datasource 
+https://www.kaggle.com/datasets/theakhilb/layoffs-data-2022/data
+
+### Appendix
+```{r fig.height=3, echo=FALSE}
+k1 <- kurtosis(training_df$Laid_Off_Count)
+
+laid_off_plt <- training_df %>% 
+  ggplot() +
+  aes(sample=Laid_Off_Count) +
+  stat_qq()  +
+  stat_qq_line() +
+  labs(
+    title = "Q-Q-Norm of Laid Off Count",
+    subtitle = paste("Skew:",as.character(round(skewness(training_df$Laid_Off_Count),1)), ", Kurtosis:", as.character(round(kurtosis(training_df$Laid_Off_Count),1)),sep=""),
+    x = "Theoretical Quantile",
+    y = "Sample Quantile"
+  )
+
+funds_raised_plt <- training_df %>% 
+  ggplot() +
+  aes(sample=Funds_Raised) +
+  stat_qq() +
+  stat_qq_line() +
+  labs(
+    title = "Q-Q-Norm of Funds Raised",
+    subtitle = paste("Skew:",as.character(round(skewness(training_df$Funds_Raised),1)), ", Kurtosis:", as.character(round(kurtosis(training_df$Funds_Raised),1)),sep=""),
+    x = "Theoretical Quantile",
+    y = "Sample Quantile"
+  )
+
+laid_off_log_plt <- training_df %>% 
+  ggplot() +
+  aes(sample=log(Laid_Off_Count)) +
+  stat_qq() +
+  stat_qq_line() +
+  labs(
+    title = "Q-Q-Norm of Log Laid Off Count",
+    subtitle = paste("Skew:",as.character(round(skewness(log(training_df$Laid_Off_Count)),1)), ", Kurtosis:", as.character(round(kurtosis(log(training_df$Laid_Off_Count)),1)),sep=""),
+    x = "Theoretical Quantile",
+    y = "Sample Quantile"
+  )
+
+funds_raised_log_plt <- training_df %>% 
+  ggplot() +
+  aes(sample=log(Funds_Raised)) +
+  stat_qq() +
+  stat_qq_line() +
+  labs(
+    title = "Q-Q-Norm of Log Funds Raised",
+    subtitle = paste("Skew:",as.character(round(skewness(log(training_df$Funds_Raised)),1)), ", Kurtosis:", as.character(round(kurtosis(log(training_df$Funds_Raised)),1)),sep=""),
+    x = "Theoretical Quantile",
+    y = "Sample Quantile"
+  )
+
+grid.arrange(laid_off_plt, funds_raised_plt,laid_off_log_plt, funds_raised_log_plt, ncol=2, nrow=2)
+```
+
+*Appendix 1 - QQNorm plots showing the decrease heavy tail distributions after logging*
+
+```{r fig.height=2, echo=FALSE}
+scatter_by_stage <- training_df %>%
+  ggplot() +
+  aes(x=log(Funds_Raised), y=log(Laid_Off_Count), color=Stage) +
+  geom_point() +
+  labs(
+    title = "Scatterplot by Stage",
+    x="Log of Funds Raised",
+    y="Log of Laid Off Count"
+  ) +
+  theme(legend.position = "none")
+
+scatter_by_industry <- training_df %>%
+  ggplot() +
+  aes(x=log(Funds_Raised), y=log(Laid_Off_Count), color=Industry) +
+  geom_point() +
+  labs(
+    title = "Scatterplot by Industry",
+    x="Log of Funds Raised",
+    y="Log of Laid Off Count"
+  ) +
+  theme(legend.position = "none")
+
+grid.arrange(scatter_by_stage, scatter_by_industry, ncol=2)
+```
+
+*Appendix 2 - Scatterplots showing no clusters - Legend removed due to space constraints*
+
+
+# Residuals vs fitted plots
+
+```{r fig.height=2, echo=FALSE}
+plotted_model_industry <- ggplot(
+  evaluation_df_logged,
+  aes(x = Predicted_Laid_Off, y = Residuals)
+) +
+  geom_point() +
+  geom_smooth() +
+  labs(
+    title = "Residuals vs Predicted",
+    subtitle = "Industry: Third Trained Model",
+    x = "Predicted Values",
+    y = "Residual Values"
+  ) +
+  theme_minimal()
+
+plotted_model_industry_stage <- ggplot(
+  evaluation_df_logged_stage,
+  aes(x = Predicted_Laid_Off_Stage, y = Residuals_Stage)
+) +
+  geom_point() +
+  geom_smooth() +
+  labs(
+    title = "Residuals vs Predicted",
+    subtitle = "Industry + Stage: Fourth Trained Model",
+    x = "Predicted Values",
+    y = "Residual Values"
+  ) +
+  theme_minimal()
+
+suppressWarnings(suppressMessages(
+  grid.arrange(plotted_model_industry, plotted_model_industry_stage, ncol=2)
+))
+```
+
+*Appendix 3 - Residual vs Fitted Plots for Explanatory Model*
+
+\newpage
+
+*Appendix 4 - Stargazer for the Unlogged Explanatory Model*
+
+
+```{r echo=FALSE}
+
+stargazer(explanatory_model_unlogged,
+  type = "text",              # Output format
+  title = "Linear Regression Summary",
+  align = TRUE,
+  column.labels = c("explanatory_model_unlogged")
+)
+
+
+```
+
+\newpage
+## References

@@ -1,0 +1,109 @@
+---
+title: "EDA layoffs"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+
+filename <- "layoffs_data.csv"
+filedir <- "/Users/steau/github/lab_2_203_sec3_fall24_team5/src/data/raw/"
+```
+
+```{r}
+# This function was used to analyze some of our datasets.
+eda_process <- function(filename, filedir) {
+  full_file <- paste(filedir,filename, sep = "")
+  dataset <- read.csv(full_file)
+  
+  print(head(dataset))
+  print(tail(dataset))
+  print(dim(dataset))
+  
+  print(data.frame(names=colnames(dataset)))
+  print(t(summary(dataset)))
+  
+  print(str(dataset))
+  print(sum(is.na(dataset)))
+  
+  return(dataset)
+}
+```
+
+```{r}
+# Utility function to see all the NA
+eda_base_func <- function(source_dataframe, operation_function) {
+  response_df <- tibble(column_name=character(), result=numeric())
+  
+  cols <- colnames(source_dataframe)
+  
+  for (col in cols) {
+    the_result <- operation_function(source_dataframe[[col]])  
+    response_df <- response_df %>% 
+      add_row(column_name = col, result = the_result) 
+  }
+  
+  return(response_df)
+}
+
+eda_of_na_count <- function(source_df_col) {
+  the_result <- sum(is.na(source_df_col))
+  return(the_result)
+}
+
+eda_of_mins <- function(source_df_col) {
+  if (!is.numeric(source_df_col)) {
+    return(NA)
+  }
+  
+  return(min(source_df_col, na.rm = TRUE))
+}
+```
+
+```{r}
+df <- eda_process(filename, filedir)
+df.col_nas <- eda_base_func(df, eda_of_na_count)
+df.mins <- eda_base_func(df, eda_of_mins)
+```
+
+```{r}
+df.filtered <- df %>% 
+  select(Company, Industry, Laid_Off_Count, Date, Funds_Raised, Stage, Country) %>% 
+  filter(Date >= as.Date("2023-01-01") & Date <= as.Date("2023-12-31")) %>% 
+  filter(Country == "United States")
+
+table(df.filtered$Industry, df.filtered$Stage )
+```
+
+
+```{r}
+df.filtered %>% 
+  ggplot() +
+  aes(x=Laid_Off_Count) +
+  geom_histogram()
+
+df.filtered %>% 
+  ggplot() +
+  aes(x=Funds_Raised) +
+  geom_histogram()
+
+```
+
+```{r}
+df.filtered %>% 
+  ggplot() +
+  aes(x = Country, y = Industry, color = Funds_Raised) +
+  geom_point() 
+
+
+df.filtered %>% 
+  ggplot() +
+  aes(x = Funds_Raised, y = Laid_Off_Count, color = Country)+
+  geom_point() 
+
+df.filtered %>% 
+  ggplot() +
+  aes(x = Funds_Raised, y = Laid_Off_Count, color = Industry) +
+  geom_point() 
+```
+

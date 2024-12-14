@@ -1,0 +1,182 @@
+---
+title: "EDA layoffs"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+source("exploratory_functions_steven.R")
+
+filename <- "layoffs_data.csv"
+filedir <- "/Users/steau/github/lab_2_203_sec3_fall24_team5/data/external/"
+```
+
+```{r include=FALSE}
+df <- eda_process(filename, filedir)
+```
+
+```{r include=FALSE}
+
+# Wrangle_dataset relies on a raw dataframe from the layoffs dataset only
+# Each iterative process is then processed accordingly
+# Params: Must require a raw datadf and the accounting function that returns a list per 2 dataframe inputs
+# Returns: A final wrangled dataframe and the iterative accounting list for the accounting table
+# EX:
+# wrangled_result <- wrangle_dataset(df, accounting_counter) // Wrangled results
+# df.final <- wrangled_result[[1]]          // final dataframe
+# accounting_iter <- wrangled_result[[2]]   // Accounting iteration 
+wrangle_dataset <- function(raw_df, acct_counter_func) {
+  accounting_iter_track <- list()
+  
+  # Limit observation to only be 2023
+  df.dated <- df %>% 
+    filter(Date >= as.Date("2023-01-01") & Date <= as.Date("2023-12-31"))
+  
+  accounting_iter_track <- c(accounting_iter_track, list(acct_counter_func(df, df.dated)))
+  
+  # See only the united states
+  df.country_us <- df.dated %>% 
+    filter(Country == "United States")
+  
+  accounting_iter_track <- c(accounting_iter_track, list(acct_counter_func(df.dated, df.country_us)))
+  
+  ## All null values do not follow a strict pattern and are determinable as random.
+  # df.test <- df.country_us!complete.cases(df.target),] 
+  
+  # Remove all nulls
+  df.no_unknowns <- df.country_us %>% 
+    drop_na(Laid_Off_Count, Funds_Raised, Stage, Industry)
+  
+  accounting_iter_track <- c(accounting_iter_track, list(acct_counter_func(df.country_us, df.no_unknowns)))
+  
+  # Group by Company
+  df.grouped_company <- df.no_unknowns %>% 
+    group_by(Company, Industry, Stage) %>% 
+    summarize(
+      Laid_Off_Count = sum(Laid_Off_Count, na.rm=TRUE),
+      Funds_Raised = mean(Funds_Raised, na.rm=TRUE)
+    )
+  
+  accounting_iter_track <- c(accounting_iter_track, list(acct_counter_func(df.no_unknowns, df.grouped_company)))
+  
+  # Drop all duplicate companies that had their industry changed in the year.
+  # This removes the temporal bias with a company
+  df.no_dupe_company <- df.grouped_company %>% 
+    group_by(Company) %>% 
+    filter(n() == 1) %>% 
+    ungroup()
+  
+  accounting_iter_track <- c(accounting_iter_track, list(acct_counter_func(df.grouped_company, df.no_dupe_company)))
+  
+  # Remove all unknowns
+  df.known_companies <- df.no_dupe_company  %>% 
+    filter(Stage != "Unknown" & Industry != "Unknown") 
+  
+  accounting_iter_track <- c(accounting_iter_track, list(acct_counter_func(df.no_dupe_company, df.known_companies)))
+  
+  other_industry <- c("Aerospace", "AI", "Energy")
+  
+  # Keep Industry, Stage, Laid_Off_Count, Funds_Raised)
+  # Rename low observation industries to "Other"
+  df.final <- df.known_companies %>% 
+    mutate(
+      Industry = case_when(
+        Industry %in% other_industry ~ "Other",
+        TRUE ~ Industry
+      )
+    ) %>% 
+    select(Industry, Stage, Laid_Off_Count, Funds_Raised)
+  
+  # No new changes made
+  
+  return(list(df.final, accounting_iter_track))
+}
+
+```
+
+```{r}
+wrangled_result <- wrangle_dataset(df, accounting_counter)
+
+df.final <- wrangled_result[[1]]
+accounting_iter <- wrangled_result[[2]]
+```
+```{r}
+# Final acct in RMD will not do this but simply index, this is just a reference
+for (i in accounting_iter) {
+  print(paste("original:", i[[1]], "result:",i[[2]], "delta:",i[[3]],sep=" "))
+}
+```
+
+```{r}
+# spot check
+table(df.final$Stage)
+print("-----")
+table(df.final$Industry)
+print("-----")
+table(df.final$Laid_Off_Count)
+print("-----")
+table(df.final$Funds_Raised)
+# Looks like we can drop the unknowns
+```
+```{r}
+write_csv(df.final, "../../data/interim/wrangled_data.csv")
+```
+
+```{r}
+# RUN ONLY ONCE and never again. No need to run anymore - will be moved to report still commented out - Do not uncomment
+# generate_indices_for_test_selection_30("../../data/interim")
+```
+
+```{r}
+interim_selection_indices <- read_csv("../../data/interim/random_training_index.csv")
+interim_selection_indices
+```
+
+```{r}
+# Model divisor
+interim_directory <- "../../data/interim"
+processed_directory <- "../../data/processed"
+
+report_dataframes <- split_data_frame(interim_directory, processed_directory)
+# 30% divided out
+training_df <- report_dataframes[[1]]
+
+# 70# 
+evaluation_df <- report_dataframes[[2]]
+```
+
+
+```{r}
+library(moments)
+plot(hist(log(training_df$Laid_Off_Count)))
+skewness(training_df$Laid_Off_Count)
+kurtosis(training_df$Laid_Off_Count)
+# 
+plot(hist(log(training_df$Funds_Raised)))
+skewness(training_df$Funds_Raised)
+kurtosis(training_df$Funds_Raised)
+
+laid_off_log_plt <- training_df %>% 
+  ggplot() +
+  aes(x=log(Laid_Off_Count)) +
+  geom_histogram(bins = 10) +
+  labs(
+    title = "Histogram of Laid Off Count",
+    x = "Log of Laid Off Count",
+    y = "Frequency"
+  )
+
+funds_raised_log_plt <- training_df %>% 
+  ggplot() +
+  aes(x=log(Funds_Raised)) +
+  geom_histogram(bins = 10) +
+  labs(
+    title = "Histogram of Funds Raised",
+    x = "Log of Funds Raised",
+    y = "Frequency"
+  )
+
+
+
+```
+

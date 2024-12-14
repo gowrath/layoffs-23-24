@@ -1,0 +1,197 @@
+---
+title:  "Lab 2: Description Using Models"
+subtitle: "This will be descriptive." 
+date: today
+author: "Datasci 203 Teaching Team" 
+abstract: In this position, you can include the short, abstract of your report. This will be printed on its own page, and cannot exceed six sentences. 
+toc: false 
+colorlinks: true
+cap-locaiton: bottom
+execute: 
+  echo: false 
+  warning: false 
+  message: false 
+bibliography: references.bib
+citeproc: true
+biblio-title: References
+link-citations: true
+format: 
+  pdf: 
+    documentclass: scrreprt
+  
+---
+
+```{r}
+library(tidyverse)
+library(patchwork)
+```
+
+```{r}
+theme_set(theme_minimal())
+```
+
+
+
+## Learning Objectives
+
+- Articulate and motivate a research question aligned with description
+- Discuss and justify how concepts are operationalized
+- Correctly evaluate the large sample regression model assumptions
+- Build a regression model that as fully as possible describes a question
+- Evaluate both statistical and practical significance of results
+
+## Introduction
+
+*Description* refers to the process of representing statistical patterns in a compact, human-understandable way, in order to gain insight. Although more attention is usually given to the alternate modes of prediction and explanation, description remains important in many domains, including economics, marketing, and political science, and policy. After all, before you can make predictions about behavior, you need to be able to describe the patterns of behavior! In this lab, you will generate a short regression analysis to investigate a question of description. 
+
+Your first task is to select a descriptive research question and a public dataset that you can use to address it. To constrain the scale of the project, you must select a single X concept and a single Y concept. You will need to ensure that your dataset includes variables you can use to operationalize both concepts.
+
+Your research question must be purely **descriptive**. Among other things, this means that your introduction must explain why understanding the relationship in question is valuable. A common error is to motivate the research question in terms of prediction or explanation. Here are two examples of this type of error:
+
+- One writes that a company might like to understand how big each person's vacation budget is to better target promotions. Since the objective requires an accurate prediction of Y for each value of X, this requires a predictive model. 
+- One writes that medical professionals would like to understand how to decrease heart attack risk. Since this objective involves manipulating something in the real world, this requires an explanatory model.
+
+In a descriptive model, we seek to understand, quite simply, what a distribution *is*. You must therefore present reasons that someone would want to understand what the relationship between your X and your Y is. Some classic examples of descriptive questions follow:
+
+- What is the wage gap between people of different genders [@blau2017]? Understanding what the gap is is valuable as a measure of fairness in society.
+- How much do people with different political leanings care about the economy [@conover1987]? This information would be useful to design political campaigns.
+- How much do consumers prefer local brands over other brands? This question was studied by @bronnenberg2009 extracting insights that are useful to marketing teams.
+
+You may think of description as revealing the "shape" of the relationship between your $X$ and your $Y$ variable, with transformations and additional model features and making this relationship human understandable.
+
+## Data
+
+You must find you own public data source for this lab. Your data must meet the following requirements:
+
+- Data should be cross-sectional; that is, each person (or other unit) must have one row of data, not multiple measurements taken at different times. If you find a panel dataset, you may subset a single cross section for this lab. If you have a single measurement for each person, but different people are measured at different times, that is ok, but you will typically want to include a time trend or time fixed effects to account for how time periods are different from each other (talk to your instructor if this is the case for you).
+
+- We recommend a minimum of 100 or 200 observations. A team can choose an interesting dataset that is smaller than this, however, this will then require the team to assess and satisfy the more stringent CLM assumptions. 
+- You should try to identify an outcome variable, $Y$, that is metric with more than two levels.  However, if there is an ordinal variable that you are interested in, you may ask your instructor for permission to use it. If using an ordinal variable, clearly highlight this limitation in your report.
+- You should identify a data set that contains enough $X$ variables that you can investigate an interesting story. Many data sets have only categorical $X$ variables, we find that this presents challenges for this assignment so you should strive to find data sets that have an expressive set of $X$ variables that include *as least some* metric features. 
+
+If your data set is large enough, you should begin your process by splitting the data into an exploration set and a confirmation set.  As a rough guideline, you might put 30\% of your data into the exploration set, but make sure that both sets have a minimum of 100-200 rows of data.  Use the exploration set to build your intuition, explore the data, and build your model specifications. Ideally, all modeling decisions - including rules for what data to code NA, how to transform variables, and what tests to run - are made using only the exploration set. Only after your report is nearly done, should you swap to the confirmation set and recalculate all the numbers in your report, including summaries, model coefficients, and p-values. Your discussion and conclusions should be based on these final numbers from your confirmation set.
+
+The following sources of data are recommended:
+
+- **General Social Survey (GSS)**. Use the [Data Explorer](https://gssdataexplorer.norc.org/variables/vfilter) to search for variables, or see a list in the [Quick Guide](https://gss.norc.org/Documents/other/R1%20Release%20Variables.pdf)
+
+- **American Community Survey (ACS)**. Access data from the [Census Website](https://www.census.gov/programs-surveys/acs/microdata/access.html) and see the [list of variables](https://api.census.gov/data/2022/acs/acs1/pums/variables.html).
+
+- **Current Population Survey (CPS)**. In particular, see the [Annual Social and Economic Supplement](https://www.census.gov/data/datasets/2023/demo/cps/cps-asec-2023.html)
+
+- **Pew Research Center**. See the list of [surveys on various topics](https://www.pewresearch.org/american-trends-panel-datasets/)
+
+If you have a specific topic you are interested in, we encourage to find your own data that is not on the list.
+
+## Modeling
+
+You are to create at least two regression models aligned with the top-level goal of description.
+
+1. The first model should be the simplest credible model. The purpose of the model here is to provide a single number representing the average strength of the relationship without conditioning on other features. This models facilitates a test of the hypothesis that there is no overall relationship.
+2. Further models should investigate how the descriptive story changes as you add additional $X$ variables or transformations of your $Y$ variable in the regression. The main purpose is to more closely describe the shape of the relationship in question, leading to more human understanding or insight. You may use a transformation (e.g. a log) or a polynomial to better capture the shape of the relationship. You may also use indicator variables (e.g. age > 18) to capture discontinuities and test whether they exist. 
+
+For example, if you were to be investigating the gender wage gap, you might first estimate a model that examines the wages of people who identify as belonging to different gender groups. However, since you believe the story here is more interesting than an simple, overall difference in wages, additional models might include additional measures for sector, experience, education in order to tell a fuller picture of the wage gap. 
+
+## Final Report
+
+Your final report should document your analysis, communicating your findings in a way that is technically precise, clear, and persuasive.
+
+Page limits:
+
+- Main report: 4 pages
+- Appendix: 2 additional pages
+
+You must meet these page limits using standard `pdf_document` output in a `.Rmd` file, or in a `documentclass: scrreprt` in a `.qmd` file. (This assignment prompt has been generated as a `scrreprt` ) . You may place a title, abstract, and references on separate pages, but the page limit includes all tables and plots. 
+
+The one-page appendix is intended for extra information that will help your instructor assess your model building process. Please include the following elements:
+
+1. **A Link to your Data Source.** If you used specialized code to access your data, please include that here. Please make sure your instructor has the ability to access the data.
+2. **A List of Model Specifications you Tried.** We are interested in seeing how you arrived at your final model. In just a sentence, please provide a reason or something that you learned from each specification.
+3. **A Residuals-vs-Fitted-values Plot.** Please generate this plot for your final model that includes variable transformations. Your instructor will use this plot to assess how well you have captured the shape of the relationship between your X and your Y variable. For example, if there is a clear parabolic pattern in your residuals-vs-fitted plot, that is a signal that you should have included a square term.
+
+## Evaluation Criteria
+
+We present the following criteria to guide you to a professional-quality report. Moreover, these criteria are also the ones we will use to grade your report. The descriptions below are copied directly from our grading rubric.
+
+### 1. Introduction
+
+An introduction that is scored in the top level has very successfully made the case for the study. It will have explained why the topic is interesting, and provided compelling reasons to care about not just the general area, but rather about every concept in the research question and the statistical results to be generated. The introduction will be engaging from the very first sentence, and create a logical story that leads the reader step-by-step to the research question. After reading the introduction, no part of the research question will appear arbitrary or unexpected, instead flowing naturally from the background provided.
+
+### 2. Description of the Data Source
+
+A report that is scored in the top level will describe the provenance of the data; the audience will know the source of the data, the method used to collect the data, the units of observation of the data, and important features of the data that are useful for judging the analysis.
+
+### 3. Data Wrangling
+
+A report that is scored in the top level on data wrangling will have succeeded to produce a modern, legible data pipeline from raw data to data for analysis. Because there are many pieces of data that are being marshaled, the reports that score in the top level will have refactored different steps in the data handling into separate files, functions, or other units. It should be clear what, and how, any additional features are derived from this data. The analysis avoid defining additional data frames when a single source of truth data would suffice. 
+
+### 4. Operationalization
+
+A report that is scored in the top level on operationalization will have precisely articulated and justified the decisions leading to the variables used in the analysis. The reader will be left with a clear understanding of the concepts in the research question, and how they relate to the operational definitions, including any major gaps that may impact the interpretation of results. You should also list how many observations you remove and for what reasons. When there is more than one reasonable way to operationalize a concept, the report will explain the alternatives and provide reasons for the one that was selected. Note that there is often more than one way to operationalize a concept; we are less interested in whether you make the best possible choice, and more in how well you defend your decisions.
+
+### 5. One or More Data Visualization(s) 
+
+This is a task of description, and one of the most effective ways to describe relationships between variables is through visualization. 
+
+You are required to include at least one plot in your main report that highlights the relationship between your $Y$ and your $X$ variables In your text, you should provide your interpretation of what this plot means, and link to the plot, as we have done in @fig-dist.  
+
+Include a visual representation of your final model predictions on the plot. A report that is scored in the top level will have plots that effectively transmit information, engage the reader's interest, maximize usability, and follow best practices of data visualization.  Titles and labels will be informative and written in plain english, avoiding variable names or other artifacts of R code.  Plots will have a good ratio of information to space or information to ink; a large or complicated plot will not be used when simple plot or table would show the same information more directly.  Axis limits will be chosen to minimize visual distortion and avoid misleading the viewer.  Plots will be free of visual artifacts created by binning.  Colors and line types will be chosen to reinforce the meanings of variable levels and with thought given to accessibility for the visually-impaired. Your report will be free of "output dumps" - code output that has not been formatted for human-readability. Every single plot and table in the report will be discussed in the narrative of the report.
+
+```{r}
+#| fig-cap: As you can see, this is an interesting distribution of values. In panel (A) we report the distribution of $X$, which presents a classic normal distribution. In panel (B) we we report the distribution of $Y$, which has a long-right tail. Finally, in panel (C) we present the joint distribution of the two, noting there is a quadratic relationship. 
+#| fig-height: 2
+#| fig-pos: t
+#| label: fig-dist
+data <- data.frame(
+  x = rnorm(n = 500, mean=0, sd = 2)) |> 
+  mutate(
+    y = 2 + x + x^2 + rnorm(n = n()))
+
+x_distribution <- 
+  data |>  
+    ggplot() + 
+    aes(x = x) + 
+    geom_histogram(bins = 15) + 
+    labs(
+      title = "Distribution of X", 
+      y     = NULL)
+y_distribution <- 
+  data |>  
+    ggplot() + 
+    aes(x = y) + 
+    geom_histogram(bins = 15) + 
+    labs(
+      title = "Distribution of Y", 
+      y     = NULL)
+xy_distribution <- 
+  data |>  
+    ggplot() +
+    aes(x = x, y = y) + 
+    geom_point() + 
+    labs(title = "Dist. of X & Y")
+
+(x_distribution + y_distribution + xy_distribution) + 
+  plot_annotation(tag_levels = 'A')
+```
+
+
+### 6. Model Specification
+
+A report that is scored in the top level will have chosen a set of regression models that strongly support the goal of the study. Variables transformations will be chosen to inform the reader of the shape of the joint distribution, and will be human-understandable. A reason will be provided for the chosen variable transformations. Ordinal variables will not be treated as metric. All model specifications will be displayed in a regression table, using a package like [`stargazer`](https://cran.r-project.org/web/packages/stargazer/vignettes/stargazer.pdf) to format your output. Displayed standard errors will be correctly chosen. 
+
+### 7. Model Assumptions
+
+A report that scores in the top-level has provided an thorough and precise assessment of the assumptions supporting the regression. The list of assumptions is appropriate given the sample size and modeling goals. Each assumption is evaluated fairly, and discussed defensively - without overstating how credible the assumption is or rendering a final up-or-down judgement on the assumption. The report will not miss any important violations of any assumption. Where possible, the report discusses the consequences for the analysis of a violated assumption.
+
+### 8. Model Results and Interpretation
+
+A report that scores in the top level will correctly interpret statistical significance, clearly interpret practical significance, and comment on the broader implications of the results. It may want to include statistical tests besides the standard t-tests for regression coefficients. When discussing practical significance, comment on both the direction and magnitude of your coefficients, placing them in context so the reader can understand if they are important. To help the reader understand your fitted model, you may want to describe hypothetical datapoints (e.g. a hypothetical person with 1 cat is predicted to spend \$2400 on pet care. That rises to \$3200 for a hypothetical person with 2 cats...).
+
+### 9. Overall Effect
+
+A report that scores in the top level will have met expectations for professionalism in data-based writing, reasoning and argument for this point in the course. It can be presented, as is, to another student in the course, and that student could read, interpret and take away the aims, intents, and conclusions of the report. 
+
+# References
+
+::: {#refs}
+:::

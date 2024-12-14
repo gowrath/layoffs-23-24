@@ -1,0 +1,363 @@
+Industry,Stage,Laid_Off_Count,Funds_Raised
+Consumer,Series C,33,133
+Consumer,Series H,37,995
+Consumer,Post-IPO,140,719
+Consumer,Post-IPO,980,2
+Consumer,Post-IPO,80,557
+Consumer,Acquired,129,290
+Consumer,Post-IPO,12115,26
+Consumer,Acquired,55,1
+Consumer,Post-IPO,10000,26000
+Consumer,Series B,60,36
+Consumer,Post-IPO,150,1500
+Consumer,Series F,90,1300
+Consumer,Acquired,46,21
+Consumer,Post-IPO,30,857
+Consumer,Post-IPO,190,4900
+Consumer,Post-IPO,130,455.2
+Consumer,Post-IPO,240,12900
+Consumer,Acquired,1600,6
+Consumer,Acquired,85,30
+Crypto,Series D,75,487
+Crypto,Series B,30,205
+Crypto,Series B,900,84
+Crypto,Series A,30,138
+Crypto,Series F,194,536
+Crypto,Series D,26,70
+Crypto,Series A,19,101
+Crypto,Post-IPO,950,549
+Crypto,Series A,17,18
+Crypto,Series D,100,726
+Crypto,Series E,30,1000
+Crypto,Series B,22,170
+Crypto,Series B,16,149
+Data,Post-IPO,320,613
+Data,Post-IPO,99,311
+Data,Series C,176,282
+Data,Series C,22,64
+Data,Post-IPO,221,455
+Data,Post-IPO,84,272
+Data,Post-IPO,170,409
+Data,Post-IPO,75,3000
+Data,Acquired,275,17
+Data,Series B,90,150
+Data,Series F,100,274
+Data,Series B,40,55
+Data,Post-IPO,825,2400
+Data,Acquired,79,340
+Data,Acquired,200,500
+Data,Series E,60,569
+Education,Series A,38,1500
+Education,Series B,22,51
+Education,Post-IPO,80,227
+Education,Series C,42,477
+Education,Series F,172,643
+Education,Series E,79,461
+Education,Acquired,29,8
+Finance,Series F,20,491
+Finance,Post-IPO,500,1500
+Finance,Series B,67,111
+Finance,Series F,28,435
+Finance,Post-IPO,95,220
+Finance,Post-IPO,490,665
+Finance,Series E,50,1300
+Finance,Series B,15,37
+Finance,Series C,186,229
+Finance,Series H,80,537
+Finance,Series H,100,468
+Finance,Series C,115,302
+Finance,Series D,81,304
+Finance,Series B,28,123
+Finance,Series C,75,85
+Finance,Series B,24,85
+Finance,Series D,50,406
+Finance,Post-IPO,100,53
+Finance,Seed,5,11
+Finance,Series D,104,556
+Finance,Series E,48,339
+Finance,Post-IPO,120,1300
+Finance,Private Equity,80,54
+Finance,Series A,15,16
+Finance,Post-IPO,45,481
+Finance,Post-IPO,397,392
+Finance,Series A,19,24
+Finance,Series E,71,1700
+Finance,Post-IPO,340,666
+Finance,Post-IPO,2000,216
+Finance,Series D,63,621
+Finance,Series D,185,272
+Finance,Post-IPO,150,5600
+Finance,Series E,104,646
+Finance,Series D,24,263
+Finance,Series B,86,50
+Finance,Series B,30,79
+Finance,Series F,123,565
+Finance,Series B,26,67
+Finance,Post-IPO,365,144
+Finance,Series E,97,992
+Finance,Post-IPO,100,1100
+Fitness,Series D,30,269
+Fitness,Acquired,120,75
+Fitness,Post-IPO,11,1900
+Fitness,Series C,80,619
+Food,Post-IPO,65,122
+Food,Series E,100,1800
+Food,Series H,100,3400
+Food,Acquired,400,284
+Food,Series H,140,1900
+Food,Series C,649,526
+Food,Post-IPO,81,184
+Food,Series D,134,711
+Hardware,Post-IPO,794,12
+Hardware,Post-IPO,440,39
+Hardware,Post-IPO,7200,50
+Hardware,Series F,130,365
+Hardware,Post-IPO,211,900
+Healthcare,Post-IPO,146,1100
+Healthcare,Post-IPO,30,238
+Healthcare,Post-IPO,46,301
+Healthcare,Series E,31,168
+Healthcare,Series D,120,464
+Healthcare,Series D,314,522
+Healthcare,Series A,100,51
+Healthcare,Series C,285,462
+Healthcare,Series D,155,891
+Healthcare,Series F,54,719
+Healthcare,Series E,300,482
+Healthcare,Acquired,800,5
+Healthcare,Post-IPO,388,999
+Healthcare,Post-IPO,326,899
+Healthcare,Post-IPO,100,82
+Healthcare,Series B,69,94
+Healthcare,Post-IPO,315,1200
+Healthcare,Acquired,39,324
+Healthcare,Acquired,135,96
+Healthcare,Post-IPO,130,550
+Healthcare,Series D,70,185
+Healthcare,Post-IPO,151,28
+Healthcare,Series E,245,379
+Healthcare,Post-IPO,235,2500
+Healthcare,Post-IPO,26,132
+Healthcare,Post-IPO,59,5900
+Healthcare,Series C,127,160
+Healthcare,Series A,16,14
+Healthcare,Series H,215,856
+Healthcare,Series C,87,255
+Healthcare,Post-IPO,170,409
+Healthcare,Series B,24,38
+Healthcare,Post-IPO,290,438
+Healthcare,Post-IPO,140,347
+Healthcare,Post-IPO,300,172
+Healthcare,Post-IPO,270,503
+Healthcare,Series D,20,156
+Healthcare,Series B,40,101
+Healthcare,Series C,56,215
+Healthcare,Series C,100,138
+Healthcare,Post-IPO,23,59
+HR,Series B,150,220
+HR,Series E,100,567
+HR,Series E,90,396
+HR,Acquired,140,204
+HR,Series D,35,192
+HR,Series E,126,746
+HR,Acquired,2200,5
+HR,Series F,105,328
+HR,Acquired,14,33
+HR,Acquired,85,30
+HR,Series B,73,106
+HR,Post-IPO,525,230
+Infrastructure,Series E,40,337
+Infrastructure,Post-IPO,350,2
+Infrastructure,Post-IPO,200,491
+Infrastructure,Post-IPO,134,462
+Infrastructure,Series A,10,39
+Infrastructure,Series D,40,173
+Infrastructure,Post-IPO,255,214
+Infrastructure,Series B,40,76
+Infrastructure,Series C,75,148
+Infrastructure,Acquired,2837,393
+Legal,Post-IPO,62,233
+Legal,Private Equity,24,100
+Legal,Post-IPO,100,951
+Legal,Series D,130,171
+Logistics,Series E,530,1100
+Logistics,Series D,131,263
+Logistics,Series E,640,2400
+Logistics,Series D,45,399
+Logistics,Post-IPO,50,118
+Logistics,Subsidiary,190,2700
+Manufacturing,Series E,90,274
+Manufacturing,Series E,30,133
+Manufacturing,Post-IPO,700,2000
+Marketing,Series B,40,52
+Marketing,Post-IPO,70,145
+Marketing,Acquired,159,107
+Marketing,Post-IPO,530,800
+Marketing,Post-IPO,500,100
+Marketing,Post-IPO,40,295
+Marketing,Series C,20,69
+Marketing,Post-IPO,90,394
+Marketing,Series C,100,104
+Marketing,Acquired,100,16
+Marketing,Acquired,63,152
+Marketing,Series F,40,456
+Media,Post-IPO,180,696
+Media,Acquired,12,20
+Media,Post-IPO,75,166
+Media,Post-IPO,560,208
+Media,Post-IPO,475,525
+Media,Series F,120,410
+Media,Series C,39,28
+Media,Series F,130,307
+Other,Acquired,50,92
+Other,Acquired,300,300
+Other,Series F,74,411
+Other,Series B,60,351
+Other,Series B,43,140
+Other,Series C,90,537
+Other,Series F,150,1100
+Other,Series B,20,86
+Other,Post-IPO,500,1700
+Other,Series D,141,212
+Other,Post-IPO,185,516
+Other,Post-IPO,350,116
+Other,Acquired,109,234
+Other,Series B,165,153
+Other,Series E,75,170
+Other,Post-IPO,11158,1
+Other,Series C,119,476
+Other,Series D,330,770
+Other,Acquired,400,62
+Other,Post-IPO,117,574
+Other,Series A,60,107
+Other,Post-IPO,30,44
+Other,Series C,59,672
+Other,Post-IPO,225,316
+Other,Series B,115,1700
+Other,Post-IPO,60,235
+Other,Post-IPO,85,152
+Other,Post-IPO,200,326
+Other,Post-IPO,100,260
+Other,Post-IPO,62,154
+Other,Post-IPO,1079,748
+Other,Post-IPO,1500,614
+Other,Post-IPO,1199,1300
+Other,Post-IPO,137,168
+Other,Series B,100,216
+Other,Post-IPO,1100,366
+Other,Post-IPO,170,2300
+Other,Post-IPO,155,307
+Other,Series E,90,415
+Other,Post-IPO,1300,276
+Other,Acquired,27,974
+Product,Series F,237,1400
+Product,Post-IPO,130,413
+Product,Series C,170,192
+Product,Series F,100,469
+Product,Seed,37,1
+Real Estate,Post-IPO,211,30
+Real Estate,Series B,40,57
+Real Estate,Series B,94,180
+Real Estate,Series B,34,114
+Real Estate,Series B,44,31
+Real Estate,Post-IPO,560,1900
+Real Estate,Series C,61,149
+Real Estate,Post-IPO,201,320
+Real Estate,Post-IPO,300,22200
+Real Estate,Post-IPO,23,97
+Recruiting,Series C,70,148
+Recruiting,Private Equity,100,110
+Recruiting,Series D,53,103
+Recruiting,Acquired,1376,154
+Recruiting,Acquired,58,153
+Recruiting,Post-IPO,270,769
+Retail,Post-IPO,17260,108
+Retail,Series D,35,100
+Retail,Series D,22,181
+Retail,Acquired,119,62
+Retail,Post-IPO,32,365
+Retail,Series B,54,75
+Retail,Post-IPO,200,451
+Retail,Acquired,100,119
+Retail,Post-IPO,225,97
+Retail,Series G,250,1700
+Retail,Series E,100,581
+Retail,Post-IPO,500,1400
+Retail,Seed,24,40
+Retail,Post-IPO,40,71
+Retail,Post-IPO,958,79
+Retail,Post-IPO,230,356
+Retail,Post-IPO,1750,1700
+Retail,Post-IPO,405,1600
+Retail,Acquired,839,194
+Retail,Post-IPO,520,1200
+Sales,Acquired,140,32
+Sales,Series F,20,496
+Sales,Series C,17,116
+Sales,Acquired,70,2
+Sales,Post-IPO,680,536
+Sales,Series E,80,583
+Sales,Series F,240,644
+Sales,Series G,70,489
+Sales,Post-IPO,8000,65
+Sales,Acquired,100,245
+Sales,Series G,221,1100
+Sales,Post-IPO,120,7
+Security,Post-IPO,290,35
+Security,Series B,50,146
+Security,Post-IPO,121,161
+Security,Series C,30,256
+Security,Series D,50,364
+Security,Series B,30,97
+Security,Series E,60,288
+Security,Acquired,140,125
+Security,Post-IPO,69,349
+Security,Private Equity,100,205
+Security,Series F,100,416
+Security,Series C,8,119
+Security,Series B,100,80
+Security,Post-IPO,300,1200
+Security,Post-IPO,470,89
+Security,Post-IPO,512,83
+Security,Series F,128,849
+Security,Acquired,100,154
+Security,Acquired,450,125
+Security,Series B,19,126
+Security,Post-IPO,177,148
+Support,Post-IPO,155,253
+Support,Post-IPO,114,484
+Support,Acquired,59,325
+Support,Private Equity,30,178
+Support,Post-IPO,100,429
+Support,Post-IPO,186,279
+Support,Series E,76,620
+Support,Series C,200,102
+Support,Acquired,320,85
+Transportation,Post-IPO,46,314
+Transportation,Acquired,900,15000
+Transportation,Post-IPO,40,400
+Transportation,Post-IPO,230,317
+Transportation,Post-IPO,1300,8300
+Transportation,Post-IPO,1072,4900
+Transportation,Series D,29,149
+Transportation,Post-IPO,270,3300
+Transportation,Series D,340,2100
+Transportation,Series B,128,390
+Transportation,Post-IPO,300,1200
+Transportation,Post-IPO,20,10700
+Transportation,Post-IPO,102,340
+Transportation,Post-IPO,150,648
+Transportation,Post-IPO,200,25200
+Transportation,Acquired,220,575
+Transportation,Post-IPO,395,1300
+Transportation,Subsidiary,209,5500
+Travel,Post-IPO,30,6400
+Travel,Private Equity,37,686
+Travel,Series F,339,224
+Travel,Post-IPO,100,3300
+Travel,Post-IPO,159,179
+Travel,Acquired,80,229
+Travel,Post-IPO,1100,1700
+Travel,Post-IPO,100,839
+Travel,Post-IPO,125,3
+Travel,Post-IPO,1300,834
