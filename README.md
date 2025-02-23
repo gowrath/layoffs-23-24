@@ -11,6 +11,9 @@ For future model improvements and research, we could include additional variable
 
 ### Paper
 
+![image](https://github.com/user-attachments/assets/8bb078c8-0a69-4b49-896e-6209e2c368fe)
+
+
 In 2023, the U.S experienced economic growth alongside a general contraction in tech hiring. Higher interest rates reshaped both the funding environment and the demand-side of technology, leading to mass layoffs across the tech sector.
 
 Do layoffs work? Well, you can find many answers online. This article has some good insights:
@@ -47,15 +50,19 @@ Next, to better understand the drivers of layoffs, we included industry as an ad
 
 You can start to see the effects of industry on layoffs below: 
 
+![image](https://github.com/user-attachments/assets/fc9af28e-8a77-4c76-be8a-5bbc5ff2abba)
+
+
 Figure 1: A heatmap of which industries were most affected in 2023.
 
 Model 3: Adding Stage
 
 To improve the explanatory power, another factor (stage) was added to further explain the variation and to analyze its effect on logged layoffs. Since a company’s stage (ex. early stage, post-IPO, etc.) often correlates with funding levels (higher stages have higher levels of funding with a correlation of 0.5), we added this as an interaction term.
 
-
-
 This last model, while accounting for the interaction between funding and stage, introduced unnecessary complexity into our model. It ultimately moved funding away from significance, suggesting that layoffs may depend more on the company's stage than on the funds raised.
+
+![image](https://github.com/user-attachments/assets/0707e944-eaf2-4fee-b9e1-2bbd6b8883b7)
+
 
 Polynomial models were explored but led to overfitting, as evidenced by significant gaps between R² and adjusted R² values.
 
@@ -74,6 +81,9 @@ The BLP assumption shows that the model captures the best possible relationship 
 Model Results:
 
 Our residual plots indicate that the model successfully captured some key relationships, though challenges remain. Notably, the interaction of funding and stage complicates predictions, and broader economic conditions likely overshadowed our model’s variables.
+
+![image](https://github.com/user-attachments/assets/17deb1b7-14ea-4bf6-bf90-bfcbfe7c29fb)
+
 
 Figure 2: A residuals vs. fitted values plot for the third and fourth models.
 
